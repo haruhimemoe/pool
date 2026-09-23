@@ -1,17 +1,23 @@
 /**
  * @file scripts/gen-packs-keys.ts
- * @desc One-off: builds random pools, encodes and decodes them with packs.haruhime.moe's own
- *       codec, and prints them as JSON (tests/fixtures/packs-keys.json). Run from a packs checkout
- *       with `bun <this file> <packs root>`; it only reads packs. Seeded, so reruns match.
+ * @desc Builds random pools and damaged keys, runs them through packs.haruhime.moe's own codec,
+ *       and prints the answers as JSON (tests/fixtures/packs-keys.json), with the packs commit.
+ *       Run `bun scripts/gen-packs-keys.ts <packs root> > tests/fixtures/packs-keys.json`; it only
+ *       reads packs. Seeded, so reruns at the same commit match. Only rerun it against a packs
+ *       that still has its own codec: once packs uses this package, it would compare the package
+ *       with itself.
  * @author David @dvhsh (https://dvh.sh)
  * @created Wed Sep 23, 2026
  * @modified Wed Sep 23, 2026
  */
 
+import { execFileSync } from "node:child_process";
+
 const root = process.argv[2];
 if (!root) throw new Error("usage: bun scripts/gen-packs-keys.ts <packs root>");
 const { encodePackKey, decodePackKey } = await import(`${root}/src/utils/pack-key.ts`);
 const { MOD_BUCKETS } = await import(`${root}/src/constants/mods.ts`);
+const commit = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
 // mulberry32: small, seeded, good enough to spread cases.
 let seed = 0x5eed2026;
@@ -31,6 +37,8 @@ const shuffle = <T>(items: T[]): T[] => {
   return items;
 };
 
+// Untrimmed names exercise the schema's trim; 64 CJK characters and 32 emoji (64 UTF-16 units)
+// push the name's byte length past a one-byte varint.
 const NAMES = [
   "EGC Quals",
   "a",
@@ -38,10 +46,31 @@ const NAMES = [
   "東方杯",
   "Pool 🎵",
   "  spaced  ",
+  "\ttabbed\t",
   "x".repeat(64),
   "Ümlaut Cup",
+  "東".repeat(64),
+  "🎵".repeat(32),
 ];
-const CODES = ["EZ", "RC", "LN", "Speed", "Tech", "HB", "Aim", "SV", "ワン", "X1", "Alt2", "Q"];
+// Twelve characters, lowercase, CJK, Greek, and a letter outside the BMP (𝒜).
+const CODES = [
+  "EZ",
+  "RC",
+  "LN",
+  "Speed",
+  "Tech",
+  "HB",
+  "Aim",
+  "SV",
+  "ワン",
+  "X1",
+  "Alt2",
+  "Q",
+  "Abcdefghijkl",
+  "rc",
+  "𝒜",
+  "Ωmega",
+];
 const FORCED = [
   ["EZ"],
   ["HD", "HR"],
@@ -50,6 +79,7 @@ const FORCED = [
   ["HD", "DT", "FL"],
   ["HT"],
   ["HR", "FL"],
+  ["EZ", "HT", "FL"],
 ];
 const ID_RANGES = [
   [1, 99],
@@ -58,40 +88,42 @@ const ID_RANGES = [
   [2_000_000_000, 2_147_483_647],
 ] as const;
 
+type Bucket = { code: string; color?: number; mods?: unknown };
 const cases: { pool: unknown; key: string; decoded: unknown }[] = [];
-let attempts = 0;
-while (cases.length < 400 && attempts < 10_000) {
-  attempts++;
-  const kind = cases.length % 4; // 0: pk1-shaped, 1: reordered/no-slot, 2: customs, 3: customs with mods
-  const buckets: { code: string; color?: number; mods?: unknown }[] = MOD_BUCKETS.map(
-    (code: string) => ({ code }),
-  );
+for (let attempts = 0; cases.length < 400 && attempts < 10_000; attempts++) {
+  // 0: built-ins only (pk1), 1: reordered and no-slot maps, 2: custom slots, 3: custom slots with mods.
+  const kind = cases.length % 4;
+  const buckets: Bucket[] = MOD_BUCKETS.map((code: string) => ({ code }));
+  // Sometimes spell out the default list: it must give the same key as leaving it out.
+  const explicitDefault = kind === 0 && random() < 0.25;
   if (kind >= 2) {
     for (const code of shuffle([...CODES]).slice(0, int(1, 8))) {
-      const entry: { code: string; color: number; mods?: unknown } = { code, color: int(0, 9) };
-      if (kind === 3 && random() < 0.7)
+      const entry: Bucket = { code, color: int(0, 9) };
+      if (kind === 3 && random() < 0.7) {
         entry.mods = random() < 0.5 ? { kind: "free" } : { kind: "forced", set: pick(FORCED) };
+      }
       buckets.splice(int(0, buckets.length), 0, entry);
     }
   }
   if (kind === 1 || (kind >= 2 && random() < 0.3)) shuffle(buckets);
-  const codes: (string | null)[] = buckets.map((b) => b.code);
+  const codes: (string | null)[] = buckets.map((bucket) => bucket.code);
   if (kind === 1 || random() < 0.2) codes.push(null);
+
+  // Fill exactly n slots (retrying collisions), hitting the 64-slot maximum often.
+  const n = random() < 0.15 ? 64 : int(0, 64);
   const used = new Set<string>();
-  const slots = [];
-  for (let n = int(0, 64); slots.length < n; ) {
+  const slots: { mod: string | null; index: number; beatmapId: number }[] = [];
+  for (let tries = 0; slots.length < n && tries < 10_000; tries++) {
     const mod = kind === 0 ? pick(MOD_BUCKETS as readonly string[]) : pick(codes);
     const index = random() < 0.9 ? int(1, 9) : int(10, 99);
-    const k = `${mod}#${index}`;
-    if (used.has(k)) {
-      n--;
-      continue;
-    }
-    used.add(k);
+    const slot = `${mod}#${index}`;
+    if (used.has(slot)) continue;
+    used.add(slot);
     const [lo, hi] = pick(ID_RANGES);
     slots.push({ mod, index, beatmapId: int(lo, hi) });
   }
-  const pool = { name: pick(NAMES).trim() || "a", slots, ...(kind === 0 ? {} : { buckets }) };
+
+  const pool = { name: pick(NAMES), slots, ...(kind === 0 && !explicitDefault ? {} : { buckets }) };
   let key: string;
   try {
     key = encodePackKey(pool);
@@ -100,4 +132,65 @@ while (cases.length < 400 && attempts < 10_000) {
   }
   cases.push({ pool, key, decoded: decodePackKey(key) });
 }
-console.log(JSON.stringify(cases));
+
+// Damaged keys: one character changed, cut short, a wrong prefix, stray text, or a body byte
+// changed with the checksum recomputed (so the decoder, not the CRC, must catch it). Record
+// packs' answer: its error code, or the pool when it still reads the key.
+const crc16 = (bytes: Uint8Array) => {
+  let crc = 0xffff;
+  for (const byte of bytes) {
+    crc ^= byte << 8;
+    for (let bit = 0; bit < 8; bit++) {
+      crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+    }
+  }
+  return crc;
+};
+const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+const fromB64 = (text: string) =>
+  Uint8Array.from(
+    atob(text.replaceAll("-", "+").replaceAll("_", "/") + "===".slice((text.length + 3) % 4)),
+    (char) => char.charCodeAt(0),
+  );
+const toB64 = (bytes: Uint8Array) =>
+  btoa(String.fromCharCode(...bytes))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/, "");
+const damage = (key: string): string => {
+  const [prefix = "", body = ""] = key.split(".");
+  switch (int(0, 4)) {
+    case 0: {
+      const at = int(0, body.length - 1);
+      return `${prefix}.${body.slice(0, at)}${pick([...B64])}${body.slice(at + 1)}`;
+    }
+    case 1:
+      return `${prefix}.${body.slice(0, int(0, body.length - 1))}`;
+    case 2:
+      return `${pick(["pk1", "pk2", "pk3", "pk4", "pk0", "pk01", "PK1"])}.${body}`;
+    case 3:
+      return pick([`  ${key}\n`, `${key}=`, `${key}==`, `${prefix}.`, `${key}!`]);
+    default: {
+      const inner = fromB64(body).slice(0, -2);
+      inner[int(0, inner.length - 1)] = int(0, 255);
+      const crc = crc16(inner);
+      return `${prefix}.${toB64(Uint8Array.from([...inner, crc >> 8, crc & 0xff]))}`;
+    }
+  }
+};
+const rejected: { key: string; code: string | null; decoded?: unknown }[] = [];
+for (const [index, entry] of cases.entries()) {
+  if (index % 2 === 1) continue;
+  for (let copy = 0; copy < 2; copy++) {
+    const key = damage(entry.key);
+    try {
+      rejected.push({ key, code: null, decoded: decodePackKey(key) });
+    } catch (error) {
+      rejected.push({ key, code: (error as { code: string }).code });
+    }
+  }
+}
+
+console.log(
+  JSON.stringify({ source: { repo: "haruhimemoe/packs.haruhime.moe", commit }, cases, rejected }),
+);

@@ -9,3 +9,7 @@ All notable changes to `@haruhimemoe/pool`. Pack keys never change for an existi
 - Messages say "pool" instead of "pack". The key `version` error no longer names packs.
 - `freemodSets` and `modSetsFor` take a `Ruleset` ("osu" | "taiko" | "fruits" | "mania").
 - `PALETTE` lists color names only. Apps map ids to their own styles.
+- `parsePoolText` errors have a `code` (`SlotLineErrorCode`) next to the English `reason`, and the custom slot limit message uses `MAX_CUSTOM_BUCKETS`.
+- The unused `ModdedRating` type isn't carried over.
+- `docs/pack-key.md` is written as the format's spec, with the decoder rules another implementation needs.
+- zod peer range `^4.0.16`, the oldest release the published types work with.

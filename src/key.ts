@@ -52,7 +52,7 @@ export type PackKeyErrorCode =
 export const PACK_KEY_ERROR_MESSAGES: Record<PackKeyErrorCode, string> = {
   empty: "Paste a pack key first.",
   prefix: "That doesn't look like a pack key. Keys start with pk1., pk2. or pk3.",
-  version: "This key was made by a newer version. Update or refresh the page and try again.",
+  version: "This key uses a newer format than this app can read.",
   encoding:
     "This key has characters that don't belong in a pack key. Check that it was copied whole.",
   checksum: "This key is damaged or incomplete. Copy it again from where you got it.",

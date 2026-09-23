@@ -16,7 +16,7 @@ It has no network, no storage and no UI. It runs in browsers, Node 22.12+, Bun a
 bun add @haruhimemoe/pool zod
 ```
 
-`zod` 4 is a peer dependency, so your app and this package share one copy and its schemas compose with yours.
+`zod` (4.0.16 or later in 4.x) is a peer dependency, so your app and this package share one copy and its schemas compose with yours. CI typechecks a consumer against both 4.0.16 and the newest zod; older 4.0.x releases break the published types.
 
 ## Use
 
@@ -33,18 +33,20 @@ decodePackKey(key); // the same pool, validated, slots in pool order
 const { slots, newBuckets, errors } = parsePoolText("NM2 75\nRC1 4000000", pool);
 ```
 
-`decodePackKey` throws a `PackKeyError` whose `code` says what's wrong (`empty`, `prefix`, `version`, `encoding`, `checksum`, `malformed`). `PACK_KEY_ERROR_MESSAGES` has default wording; show your own if you prefer.
+`encodePackKey` validates first and throws zod's `ZodError` for a pool that isn't complete (an empty name, a bad slot). `decodePackKey` throws a `PackKeyError` whose `code` says what's wrong (`empty`, `prefix`, `version`, `encoding`, `checksum`, `malformed`). `PACK_KEY_ERROR_MESSAGES` has default wording; show your own by code if you prefer. `parsePoolText` errors carry a `code` the same way.
+
+Why "pack key" and not "pool key"? That's the format's name: packs.haruhime.moe published it, and every key starts `pk`. The data is a `Pool`; a pool travels as a pack key.
 
 ## What's in it
 
 | Area | Exports |
 | --- | --- |
 | Shape and validation | `Pool`, `PoolSlot`, `BucketEntry`, `CustomBucket`, `poolSchema` (a complete pool, as in a key), `poolDraftSchema` (the name may be empty while typing), `poolFields` (unrefined, to `.extend()`; refine with `checkPoolBuckets`), `poolSlotSchema`, `storedSlotModsSchema`, `beatmapIdSchema`, `slotKey` |
-| Limits and names | `MAX_SLOTS` (64), `MAX_SLOT_INDEX` (99), `MAX_NAME_LENGTH` (64), `MOD_BUCKETS`, `MOD_BUCKET_NAMES`, `MAX_CUSTOM_BUCKETS` (8), `BUCKET_CODE_PATTERN`, `PALETTE` (custom slot color names by id) |
+| Limits and names | `MAX_SLOTS` (64), `MAX_SLOT_INDEX` (99), `MAX_NAME_LENGTH` (64), `MOD_BUCKETS`, `MOD_BUCKET_NAMES`, `isModBucket`, `MAX_CUSTOM_BUCKETS` (8), `MAX_BUCKET_CODE_LENGTH` (12), `BUCKET_CODE_PATTERN`, `NO_SLOT_NAME`, `PALETTE` (custom slot color names by id), `PALETTE_SIZE` |
 | Mods | `MOD_ACRONYMS`, `SlotMods`, `slotModsFor`, `modSetProblem`, `modBlockedReason`, `toggleMod`, `modSetsFor`, `freemodSets`, `modsToBitmask`, `bitmaskToMods`, `slotModsSummary`, `RULESETS` |
 | Buckets | `bucketsOf`, `DEFAULT_BUCKETS`, `canonicalBuckets`, `addBucket`, `renameBucket`, `recolorBucket`, `moveBucket`, `removeBucket`, `setBucketMods`, `checkBucketCode`, `slotLabel`, `bucketName`, … |
 | Slots | `sortSlots`, `addSlot`, `removeSlot`, `moveSlot`, `mergeSlots`, `planMerge`, `nextSlotIndex` |
-| Pasted text | `parseBeatmapRef`, `parsePoolText`, `POOL_LINE_HELP` |
+| Pasted text | `parseBeatmapRef`, `parsePoolText` (errors have a `SlotLineErrorCode`), `POOL_LINE_HELP` |
 | Pack keys | `encodePackKey`, `decodePackKey`, `extractPackKey`, `PackKeyError`, `PACK_KEY_VERSIONS` |
 
 ## Compatibility
@@ -52,7 +54,8 @@ const { slots, newBuckets, errors } = parsePoolText("NM2 75\nRC1 4000000", pool)
 Keys are forever. Every `pk1.`, `pk2.` and `pk3.` key ever made must open, and the same pool must always produce the same key. Two fixture sets guard this:
 
 - `tests/fixtures/legacy-keys.json`: hand-picked keys, pinned since each version shipped.
-- `tests/fixtures/packs-keys.json`: 400 random pools that packs.haruhime.moe's own codec encoded and decoded. This package must match it byte for byte.
+- `tests/fixtures/packs-keys.json`: 400 random pools that packs.haruhime.moe's own codec encoded and decoded, and 400 damaged keys with the answer packs gave, recorded at a known packs commit. This package must match every one.
+- `tests/key-decoder.test.ts`: hand-built keys for each rule in the spec's "Decoder rules".
 
 A new key format is a new version (`pk4.`). It gets a section in [docs/pack-key.md](docs/pack-key.md), and older pools keep their keys.
 

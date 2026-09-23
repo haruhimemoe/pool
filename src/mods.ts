@@ -24,9 +24,6 @@ export type ModAcronym = (typeof MOD_ACRONYMS)[number];
 /** What a slot's maps are played with. Stored custom slots only ever hold "forced" or "free". */
 export type SlotMods = { kind: "none" } | { kind: "forced"; set: ModAcronym[] } | { kind: "free" };
 
-/** One star rating with mods: `mods` is the set's label ("HDHR"). */
-export type ModdedRating = { mods: string; stars: number };
-
 export const NO_MODS: SlotMods = { kind: "none" };
 
 export const MAX_FORCED_MODS = 3;

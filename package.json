@@ -51,10 +51,11 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:dist": "bun run build && node scripts/smoke.mjs",
-    "prepublishOnly": "bun run check && bun run typecheck && bun run test && bun run test:dist"
+    "prepublishOnly": "bun run check && bun run typecheck && bun run test && bun run test:dist",
+    "check:consumer": "bun run build && node scripts/check-consumer.mjs"
   },
   "peerDependencies": {
-    "zod": "^4.0.0"
+    "zod": "^4.0.16"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

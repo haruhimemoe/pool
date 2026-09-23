@@ -15,6 +15,7 @@ import {
   nextFreeColor,
   slotLabel,
 } from "./buckets.js";
+import { MAX_CUSTOM_BUCKETS } from "./constants.js";
 import { nextSlotIndex } from "./pool.js";
 import {
   type BucketEntry,
@@ -72,7 +73,21 @@ const SLOT_LINE = /^([\p{L}\p{N}]{1,12}?)\s?(\d{1,2})?\s*[:.-]?\s+(\S+)/u;
 export const POOL_LINE_HELP =
   "Start the line with a slot like NM1 or EZ2, or paste only beatmap IDs or links.";
 
-export type SlotLineError = { line: number; text: string; reason: string };
+/**
+ * Why a line was skipped: `set-only` (a beatmapset link, not a difficulty), `unrecognized` (not a
+ * slot line or an ID), `bad-index` (slot 0), `bad-beatmap` (the slot's map isn't an ID or link),
+ * `full` (no room for another custom slot), `duplicate` (the same slot twice). `reason` is English
+ * text; show your own wording by `code` if you prefer.
+ */
+export type SlotLineErrorCode =
+  | "set-only"
+  | "unrecognized"
+  | "bad-index"
+  | "bad-beatmap"
+  | "full"
+  | "duplicate";
+
+export type SlotLineError = { line: number; text: string; code: SlotLineErrorCode; reason: string };
 
 type LineParts = { code: string; index: string | undefined; ref: string };
 
@@ -129,7 +144,8 @@ export const parsePoolText = (
   text.split(/\r?\n/).forEach((raw, i) => {
     const line = raw.trim();
     if (line === "" || line.startsWith("#")) return;
-    const fail = (reason: string) => errors.push({ line: i + 1, text: line, reason });
+    const fail = (code: SlotLineErrorCode, reason: string) =>
+      errors.push({ line: i + 1, text: line, code, reason });
 
     // ID lines: every leading token that is an ID or difficulty link is a no-slot map; anything
     // after the first non-ID token (titles, mapper names) is ignored.
@@ -144,7 +160,7 @@ export const parsePoolText = (
       return;
     }
     if (first.reason === "set-only") {
-      fail(BEATMAP_REF_MESSAGES["set-only"]);
+      fail("set-only", BEATMAP_REF_MESSAGES["set-only"]);
       return;
     }
 
@@ -154,17 +170,20 @@ export const parsePoolText = (
       splitKnownCode(line, list) ??
       (generic ? { code: generic[1] ?? "", index: generic[2], ref: generic[3] ?? "" } : null);
     if (!parts) {
-      fail(POOL_LINE_HELP);
+      fail("unrecognized", POOL_LINE_HELP);
       return;
     }
     const index = parts.index === undefined ? 1 : Number(parts.index);
     if (index < 1) {
-      fail("Slot numbers start at 1.");
+      fail("bad-index", "Slot numbers start at 1.");
       return;
     }
     const ref = parseBeatmapRef(parts.ref);
     if (!ref.ok) {
-      fail(BEATMAP_REF_MESSAGES[ref.reason]);
+      fail(
+        ref.reason === "set-only" ? "set-only" : "bad-beatmap",
+        BEATMAP_REF_MESSAGES[ref.reason],
+      );
       return;
     }
 
@@ -172,16 +191,16 @@ export const parsePoolText = (
     if (mod === null) {
       // "1. 129891" is a numbered list, not a slot called "1".
       if (/^\p{N}+$/u.test(parts.code)) {
-        fail(POOL_LINE_HELP);
+        fail("unrecognized", POOL_LINE_HELP);
         return;
       }
       const problem = checkBucketCode(list, parts.code);
       if (problem === "full") {
-        fail("This pool already has 8 custom slots.");
+        fail("full", `This pool already has ${MAX_CUSTOM_BUCKETS} custom slots.`);
         return;
       }
       if (problem !== null) {
-        fail(POOL_LINE_HELP);
+        fail("unrecognized", POOL_LINE_HELP);
         return;
       }
       const bucket: CustomBucket = { code: parts.code, color: nextFreeColor(list) };
@@ -192,7 +211,7 @@ export const parsePoolText = (
 
     const key = slotKey({ mod, index });
     if (seen.has(key)) {
-      fail(`${slotLabel({ mod, index })} appears more than once.`);
+      fail("duplicate", `${slotLabel({ mod, index })} appears more than once.`);
       return;
     }
     seen.add(key);
