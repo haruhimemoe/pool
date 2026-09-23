@@ -138,9 +138,18 @@ export const checkPoolBuckets = (
   });
 };
 
+/**
+ * A lone surrogate can't be written as UTF-8, so a key couldn't carry the name as given. Same
+ * answer as String.prototype.isWellFormed (ES2024): with the u flag, \p{Cs} only matches a
+ * surrogate that isn't part of a pair.
+ */
+const LONE_SURROGATE = /\p{Cs}/u;
+const wellFormed = (name: string): boolean => !LONE_SURROGATE.test(name);
+const WELL_FORMED = { message: "the name has a broken character" };
+
 /** The unrefined pool object, for `.extend()` (e.g. a stored pool with more fields); refine the result yourself. */
 export const poolFields = z.object({
-  name: z.string().trim().min(1).max(MAX_NAME_LENGTH),
+  name: z.string().trim().min(1).max(MAX_NAME_LENGTH).refine(wellFormed, WELL_FORMED),
   slots: slotsSchema,
   buckets: bucketsSchema.optional(),
 });
@@ -150,7 +159,7 @@ export const poolSchema = poolFields.superRefine(checkPoolBuckets);
 
 /** A pool being edited: the name may be empty mid-typing. */
 export const poolDraftSchema = poolFields
-  .extend({ name: z.string().max(MAX_NAME_LENGTH) })
+  .extend({ name: z.string().max(MAX_NAME_LENGTH).refine(wellFormed, WELL_FORMED) })
   .superRefine(checkPoolBuckets);
 
 export type Pool = z.infer<typeof poolSchema>;

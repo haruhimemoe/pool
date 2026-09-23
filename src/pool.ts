@@ -9,7 +9,14 @@
 
 import { bucketsOf, DEFAULT_BUCKETS, findBucket } from "./buckets.js";
 import { MAX_SLOT_INDEX, MAX_SLOTS } from "./constants.js";
-import { type BucketEntry, type Pool, type PoolSlot, type SlotBucket, slotKey } from "./schema.js";
+import {
+  type BucketEntry,
+  type Pool,
+  type PoolSlot,
+  poolSlotSchema,
+  type SlotBucket,
+  slotKey,
+} from "./schema.js";
 
 /**
  * @function sortSlots
@@ -66,15 +73,18 @@ export const addSlot = (pool: Pool, mod: SlotBucket, beatmapId: number): Pool =>
  * @param pool {Pool} current pool
  * @param mod {SlotBucket} bucket, or null for no slot
  * @param index {number} slot number to remove
- * @returns {Pool} new pool with later slots in the same group shifted down by one
+ * @returns {Pool} new pool with later slots in the same group shifted down by one, or the same
+ *          pool when no slot matches
  */
-export const removeSlot = (pool: Pool, mod: SlotBucket, index: number): Pool =>
-  withSlots(
+export const removeSlot = (pool: Pool, mod: SlotBucket, index: number): Pool => {
+  if (!pool.slots.some((s) => s.mod === mod && s.index === index)) return pool;
+  return withSlots(
     pool,
     pool.slots
       .filter((s) => !(s.mod === mod && s.index === index))
       .map((s) => (s.mod === mod && s.index > index ? { ...s, index: s.index - 1 } : s)),
   );
+};
 
 /**
  * @function moveSlot
@@ -104,13 +114,27 @@ export type MergePlan = { added: PoolSlot[]; replaced: PoolSlot[]; dropped: Pool
  * @function planMerge
  * @param slots {readonly PoolSlot[]} current slots
  * @param incoming {readonly PoolSlot[]} slots to upsert by (mod, index)
- * @returns {MergePlan} new slots that fit, slots that swap in a different map, and new slots past
- *          MAX_SLOTS. An incoming slot identical to an existing one is in none of the lists.
+ * @param buckets {readonly BucketEntry[]} the pool's bucket list; when given, a slot in a bucket
+ *        that isn't in it is dropped. Leave it out to preview a paste before its new buckets exist.
+ * @returns {MergePlan} new slots that fit, slots that swap in a different map, and dropped slots:
+ *          new ones past MAX_SLOTS, any that fail poolSlotSchema (a number past 99, a bad beatmap
+ *          ID), and any in an unknown bucket. An incoming slot identical to an existing one is in
+ *          none of the lists.
  */
-export const planMerge = (slots: readonly PoolSlot[], incoming: readonly PoolSlot[]): MergePlan => {
+export const planMerge = (
+  slots: readonly PoolSlot[],
+  incoming: readonly PoolSlot[],
+  buckets?: readonly BucketEntry[],
+): MergePlan => {
   const byKey = new Map(slots.map((s) => [slotKey(s), s]));
   const plan: MergePlan = { added: [], replaced: [], dropped: [] };
   for (const slot of incoming) {
+    const unknownBucket =
+      buckets !== undefined && slot.mod !== null && findBucket(buckets, slot.mod) === undefined;
+    if (unknownBucket || !poolSlotSchema.safeParse(slot).success) {
+      plan.dropped.push(slot);
+      continue;
+    }
     const key = slotKey(slot);
     const current = byKey.get(key);
     if (current) {
@@ -130,10 +154,12 @@ export const planMerge = (slots: readonly PoolSlot[], incoming: readonly PoolSlo
  * @function mergeSlots
  * @param pool {Pool} current pool
  * @param incoming {readonly PoolSlot[]} slots to upsert by (mod, index)
- * @returns {Pool} new pool; replacements always apply, new slots stop at MAX_SLOTS
+ * @returns {Pool} new pool; replacements always apply, new slots stop at MAX_SLOTS, and slots
+ *          planMerge drops (a bad number or ID, a bucket the pool doesn't have) are left out, so
+ *          a valid pool stays valid. Add a paste's new buckets first (addBuckets).
  */
 export const mergeSlots = (pool: Pool, incoming: readonly PoolSlot[]): Pool => {
-  const { added, replaced } = planMerge(pool.slots, incoming);
+  const { added, replaced } = planMerge(pool.slots, incoming, bucketsOf(pool));
   const byKey = new Map(pool.slots.map((s) => [slotKey(s), s]));
   for (const slot of [...added, ...replaced]) byKey.set(slotKey(slot), slot);
   return withSlots(pool, [...byKey.values()]);

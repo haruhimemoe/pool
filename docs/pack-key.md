@@ -12,7 +12,7 @@ A pack key is a short piece of text that holds a whole mappool: its name, which 
 A key is `pk1.` followed by base64url text (letters, digits, `-` and `_`, no padding). Decoded, the bytes are:
 
 1. **Version**: one byte, `1`.
-2. **Name length**: a varint (unsigned LEB128), then the name as UTF-8. Names are 1 to 64 characters.
+2. **Name length**: a varint (unsigned LEB128), then the name as UTF-8. Names are 1 to 64 UTF-16 code units after trimming (see "Decoder rules").
 3. **Slot count**: a varint, at most 64.
 4. **Each slot**: one byte for the mod bucket, then the slot number as a varint, then the beatmap (difficulty) ID as a varint. Bucket bytes are 0 to 5 for NM, HD, HR, DT, FM, TB, in that order.
 5. **Checksum**: two bytes, CRC-16/CCITT-FALSE of everything before it, high byte first.
@@ -25,12 +25,12 @@ Pools that use only NM, HD, HR, DT, FM, and TB in that order, with every map in 
 
 1. **Version**: one byte, `2`.
 2. **Name**: a varint length, then the name as UTF-8, as in version 1.
-3. **Slot table**: a varint count (6 to 14), then each slot in pool order. A built-in is one byte, `0` to `5` for NM, HD, HR, DT, FM, TB. A custom slot is the byte `0xFE`, one color byte (`0` to `9`: green, teal, pink, lime, cyan, fuchsia, yellow, red, indigo, stone), then its code as a varint length and UTF-8. Codes are 1 to 12 letters or digits.
+3. **Slot table**: a varint count (6 to 14), then each slot in pool order. A built-in is one byte, `0` to `5` for NM, HD, HR, DT, FM, TB. A custom slot is the byte `0xFE`, one color byte (`0` to `9`: green, teal, pink, lime, cyan, fuchsia, yellow, red, indigo, stone), then its code as a varint length and UTF-8. Codes are 1 to 12 code points, each a letter or digit in any script (see "Decoder rules").
 4. **Map count**: a varint, at most 64.
 5. **Each map**: one byte for its position in the slot table, or `0xFF` for "no slot", then the slot number and the beatmap ID as varints.
 6. **Checksum**: two bytes, CRC-16/CCITT-FALSE of everything before it, as in version 1.
 
-Maps without a slot come first, numbered 1, 2, 3, then the slots in table order. The same pool always makes the same key.
+Maps without a slot come first, then the slots in table order, each group by slot number. No-slot maps carry their own numbers (1 to 99, gaps allowed) like any other slot; the codec writes them as they are and never renumbers. The same pool always makes the same key.
 
 ## Version 3: mods on custom slots
 
@@ -57,34 +57,49 @@ A `pk3.` key whose custom slots end up with no mods still opens fine, and the ne
 
 ## Decoder rules
 
-Everything a decoder must check, so every implementation accepts and refuses the same keys. `decodePackKey` reports the first failure as a `PackKeyError` code, shown in brackets.
+Everything a decoder must check, so every implementation accepts and refuses the same keys. The reference decoder (`decodePackKey` in `@haruhimemoe/pool`) reports the first failure as an error code, shown in brackets. The checks run in the order listed.
+
+Some rules below are looser than they could be (a dropped byte order mark, ignored base64 bits). They describe what decoders have done since `pk1.`, and every key ever made must keep opening, so they stay. An encoder never writes such keys; a decoder must accept them.
 
 **Text**
 
-- Surrounding whitespace is ignored. The text is `pk`, the version number spelled exactly (`pk1.` is version 1; `pk01.` is not), a dot, then the body (`prefix` when the shape is wrong, `version` when the number isn't one this decoder reads).
-- The body is strict base64url: only `A-Z a-z 0-9 - _`, no padding, and never a length that leaves a single dangling character (`encoding`).
+- Blank input, after trimming, is `empty`.
+- Surrounding whitespace is ignored. "Whitespace" is exactly the set ECMAScript's `String.prototype.trim` removes: tab, vertical tab, form feed, space, U+00A0, U+FEFF, the other Unicode space separators (general category Zs, such as U+3000), LF, CR, U+2028 and U+2029. U+0085, U+180E and U+200B are not whitespace here, so a key with one of them in front is refused (`prefix`). Other languages' trim functions use different sets; match this one.
+- The text is `pk`, the version number spelled exactly (`pk1.` is version 1; `pk01.` and `PK1.` are not), a dot, then the body (`prefix` when the shape is wrong, `version` when the number isn't one this decoder reads).
+- The body is base64url: only `A-Z a-z 0-9 - _`, no padding, and never a length that leaves a single dangling character (`encoding`). The unused low bits of the last character are ignored, not checked: when the body length is 2 or 3 more than a multiple of 4, the last character carries 4 or 2 bits that belong to no byte. Encoders write them as zero. Decoders must accept any value there, so `pk1.AQJhYgEAAQEETQ` and `pk1.AQJhYgEAAQEETR` open the same pool. Strict decoders (Go's `RawURLEncoding.Strict`, for example) refuse these, so don't use one.
 - It must decode to at least 3 bytes (`malformed`). The last two are the CRC-16/CCITT-FALSE of the rest, high byte first (`checksum`). The first body byte must equal the prefix's version (`version`).
 
 **Bytes** (all `malformed`)
 
 - Varints are unsigned LEB128, at most 5 bytes, at most 2³²−1. Overlong encodings (like `0x80 0x00` for 0) are accepted.
-- Strings are a varint byte length and valid UTF-8 that must not run past the end.
+- Strings are a varint byte length, then that many bytes of valid UTF-8 that must not run past the end. One byte order mark at the very start of a string (the bytes `EF BB BF`, U+FEFF) is dropped before any other check, as a WHATWG `TextDecoder` does by default. Only the first is dropped: a second one stays in the string.
 - Slot table: 6 to 14 entries. Bytes `0` to `5` are the built-ins, `0xFE` a custom slot, and `0xFD` a custom slot with mods (version 3 only; in version 2 it's an unknown byte). A color byte and, for `0xFD`, a mode byte (`1` forced, `2` freemod) and for forced mods a bitmask byte must be present. A bitmask with a bit no mod uses is refused.
 - At most 64 maps. A map's table position must exist (`0xFF` is "no slot", allowed only when there's a table). In version 1, the bucket byte must be `0` to `5`.
 - Nothing may follow the last map.
 
-**The pool** (all `malformed`: the decoded pool must pass `poolSchema`)
+**The pool** (all `malformed`)
 
-- The name is trimmed, then 1 to 64 UTF-16 code units.
+- The name is trimmed (the same whitespace set as above), then must be 1 to 64 UTF-16 code units.
 - Slot numbers are 1 to 99. Beatmap IDs are 1 to 2³¹−1. Each (slot, number) appears once.
-- The table has each built-in exactly once, at most 8 custom slots, and custom codes that are 1 to 12 letters or digits, unique ignoring case, and not a built-in's code in any case. Every map's slot is in the table.
+- The table has each built-in exactly once and at most 8 custom slots. Every map's slot is in the table.
+- A custom code is 1 to 12 code points (not bytes, not UTF-16 units: twelve `𝒜` pass, thirteen don't). Each code point must be in Unicode general category L (letters) or N (numbers), in any script: `Ü`, `難`, `Ⅻ` and `½` pass. Combining marks (category M) don't, so a decomposed `é` (`e` + U+0301) is refused.
+- Codes compare after uppercasing with Unicode's default full case mapping, with no locale: ECMAScript's `String.prototype.toUpperCase`. That mapping can change length, so `ß` and `SS` clash, as do `ı` and `I`, `ſ` and `S`, and `ﬀ` and `FF`. `İ` (U+0130) uppercases to itself, so it doesn't clash with `I` or `i`. After uppercasing, custom codes must be unique and must not equal a built-in's code (`hd` and `Nm` are refused). Case folding or lowercasing gives different answers on some of these pairs; uppercase.
 - Colors are `0` to `9`. Forced mods are 1 to 3, in the order EZ, HD, HR, DT, HT, FL, without EZ with HR or DT with HT.
+
+**Unicode versions**
+
+The whitespace set, the L and N categories and the uppercase mapping come from the Unicode tables of the runtime doing the check, and those grow with each Unicode release. A code that uses a character assigned in a newer Unicode version than the decoder knows (Garay letters from Unicode 16, for example) passes on a current engine and is refused as `malformed` on an older one. Keys whose codes use long-assigned characters open everywhere. Encoders don't restrict codes to a pinned Unicode version, so a decoder should use tables at least as new as the encoders its users share keys with.
 
 **What comes out**
 
 - Slots in pool order: no-slot maps first, then the table's order, then slot number.
 - `buckets` only when the table isn't the six built-ins in default order.
-- Encoding that result gives the canonical key. Any key an encoder wrote comes back unchanged. A hand-built key that is valid but not canonical (overlong varints, maps out of order, a written-out default table, a higher version than it needs) still opens, and re-encodes to the canonical key.
+- Encoding that result gives the canonical key. Any key an encoder wrote comes back unchanged. A hand-built key that is valid but not canonical (overlong varints, maps out of order, a written-out default table, a higher version than it needs, a dropped byte order mark, a trimmed name, non-zero unused base64 bits) still opens, and re-encodes to the canonical key.
+
+**Encoders**
+
+- An encoder writes only pools that pass every rule above, with the name already trimmed, and writes the unused base64 bits as zero.
+- A name with a lone surrogate (a UTF-16 half with no partner) has no UTF-8 form, so encoders refuse it rather than write U+FFFD in its place. A decoded name never contains one.
 
 ## Version history
 

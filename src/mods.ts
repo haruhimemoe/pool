@@ -13,18 +13,24 @@
 import type { ModBucket } from "./constants.js";
 import type { BucketEntry } from "./schema.js";
 
-export const MOD_ACRONYMS = ["EZ", "HD", "HR", "DT", "HT", "FL"] as const;
+export const MOD_ACRONYMS = Object.freeze(["EZ", "HD", "HR", "DT", "HT", "FL"] as const);
 
 /** osu!'s four rulesets, as the osu! API names them. */
-export const RULESETS = ["osu", "taiko", "fruits", "mania"] as const;
+export const RULESETS = Object.freeze(["osu", "taiko", "fruits", "mania"] as const);
 export type Ruleset = (typeof RULESETS)[number];
 
 export type ModAcronym = (typeof MOD_ACRONYMS)[number];
 
-/** What a slot's maps are played with. Stored custom slots only ever hold "forced" or "free". */
-export type SlotMods = { kind: "none" } | { kind: "forced"; set: ModAcronym[] } | { kind: "free" };
+/**
+ * What a slot's maps are played with. Stored custom slots only ever hold "forced" or "free".
+ * Read-only, because slotModsFor hands out shared frozen values for the built-ins.
+ */
+export type SlotMods =
+  | { readonly kind: "none" }
+  | { readonly kind: "forced"; readonly set: readonly ModAcronym[] }
+  | { readonly kind: "free" };
 
-export const NO_MODS: SlotMods = { kind: "none" };
+export const NO_MODS: SlotMods = Object.freeze({ kind: "none" });
 
 export const MAX_FORCED_MODS = 3;
 
@@ -34,14 +40,14 @@ const CONFLICTS: readonly (readonly [ModAcronym, ModAcronym])[] = [
   ["DT", "HT"],
 ];
 
-export const MOD_SET_MESSAGES = {
+export const MOD_SET_MESSAGES = Object.freeze({
   empty: "Pick at least one mod.",
   unknown: "Mods are EZ, HD, HR, DT, HT and FL.",
   duplicate: "Each mod can only be picked once.",
   tooMany: `A slot can force at most ${MAX_FORCED_MODS} mods.`,
   conflict: "EZ with HR, and DT with HT, can't be forced together.",
   order: "List mods in the order EZ, HD, HR, DT, HT, FL.",
-} as const;
+} as const);
 
 export type ModSetProblem = keyof typeof MOD_SET_MESSAGES;
 
@@ -128,20 +134,24 @@ export const bitmaskToMods = (mask: number): ModAcronym[] => {
  */
 export const modsLabel = (set: readonly ModAcronym[]): string => set.join("");
 
-const BUILT_IN_MODS: Record<ModBucket, SlotMods> = {
+const forced = (mod: ModAcronym): SlotMods =>
+  Object.freeze({ kind: "forced", set: Object.freeze([mod]) });
+const FREEMOD: SlotMods = Object.freeze({ kind: "free" });
+
+const BUILT_IN_MODS: Readonly<Record<ModBucket, SlotMods>> = Object.freeze({
   NM: NO_MODS,
-  HD: { kind: "forced", set: ["HD"] },
-  HR: { kind: "forced", set: ["HR"] },
-  DT: { kind: "forced", set: ["DT"] },
-  FM: { kind: "free" },
-  TB: { kind: "free" },
-};
+  HD: forced("HD"),
+  HR: forced("HR"),
+  DT: forced("DT"),
+  FM: FREEMOD,
+  TB: FREEMOD,
+});
 
 /**
  * @function slotModsFor
  * @param entry {BucketEntry} a bucket
  * @returns {SlotMods} NM none; HD, HR, DT that mod; FM and TB freemod; a custom slot its own
- *          setting (none when absent). Callers must not mutate the result.
+ *          setting (none when absent). Built-ins get shared frozen values.
  */
 export const slotModsFor = (entry: BucketEntry): SlotMods =>
   "color" in entry ? (entry.mods ?? NO_MODS) : BUILT_IN_MODS[entry.code];

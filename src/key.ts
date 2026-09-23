@@ -26,12 +26,13 @@ import {
 import { decodeVarint, encodeVarint } from "./varint.js";
 
 /** Every key version this build reads. Append only; the pack-key guide documents each one. */
-export const PACK_KEY_VERSIONS = [1, 2, 3] as const;
+export const PACK_KEY_VERSIONS = Object.freeze([1, 2, 3] as const);
 
 export type PackKeyVersion = (typeof PACK_KEY_VERSIONS)[number];
 
 const KEY_PATTERN = /^pk(\d+)\.(.*)$/s;
-const KEY_IN_TEXT = /pk\d+\.[A-Za-z0-9_-]+/;
+/** Not glued to a word before it; trailing `-` and `_` stay, since they are base64url. */
+const KEY_IN_TEXT = /(?<![A-Za-z0-9_-])pk\d+\.[A-Za-z0-9_-]+/;
 /** Bucket table entry: a custom bucket follows (color, code length, code). */
 const CUSTOM_ENTRY = 0xfe;
 /** Bucket table entry, pk3 only: a custom bucket with mods (color, code, mode, [bitmask]). */
@@ -49,15 +50,15 @@ export type PackKeyErrorCode =
   | "checksum"
   | "malformed";
 
-export const PACK_KEY_ERROR_MESSAGES: Record<PackKeyErrorCode, string> = {
+export const PACK_KEY_ERROR_MESSAGES: Readonly<Record<PackKeyErrorCode, string>> = Object.freeze({
   empty: "Paste a pack key first.",
   prefix: "That doesn't look like a pack key. Keys start with pk1., pk2. or pk3.",
-  version: "This key uses a newer format than this app can read.",
+  version: "This app can't read this key's version. It may come from a newer app, or be damaged.",
   encoding:
     "This key has characters that don't belong in a pack key. Check that it was copied whole.",
   checksum: "This key is damaged or incomplete. Copy it again from where you got it.",
   malformed: "This key is damaged or incomplete. Copy it again from where you got it.",
-};
+});
 
 export class PackKeyError extends Error {
   readonly code: PackKeyErrorCode;
@@ -272,7 +273,8 @@ export const decodePackKey = (input: string): Pool => {
 /**
  * @function extractPackKey
  * @param input {string} pasted text: a bare key, a share link, or a sentence containing one
- * @returns {string | null} the first pk<version>.<base64url> run, or null
+ * @returns {string | null} the first pk<version>.<base64url> run that doesn't follow a letter,
+ *          digit, `-` or `_`, or null
  */
 export const extractPackKey = (input: string): string | null =>
   KEY_IN_TEXT.exec(input)?.[0] ?? null;

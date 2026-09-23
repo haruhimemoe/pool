@@ -1,7 +1,8 @@
 /**
  * @file tests/key-decoder.test.ts
  * @desc Hand-built key bodies (valid CRC) that must be refused: every decoder branch the random
- *       and legacy fixtures don't reach, each with the error code packs gives.
+ *       and legacy fixtures don't reach, each with the error code packs gives, plus the looser
+ *       rules docs/pack-key.md pins (BOM, base64 tail bits, whitespace, code points, uppercasing).
  * @author David @dvhsh (https://dvh.sh)
  * @created Wed Sep 23, 2026
  * @modified Wed Sep 23, 2026
@@ -98,5 +99,69 @@ describe("non-canonical keys the spec says open", () => {
   it("re-encodes a pk3 key with no mods as pk2", () => {
     const key = keyOf(3, [3, ...NAME, ...table(BUILT_INS, [0xfe, 0, 1, 0x58]), 1, 6, 1, 9]);
     expect(encodePackKey(decodePackKey(key)).startsWith("pk2.")).toBe(true);
+  });
+});
+
+describe("the looser rules the spec pins (keys are forever)", () => {
+  const utf8 = (text: string) => [...new TextEncoder().encode(text)];
+  const str = (bytes: number[]) => [bytes.length, ...bytes];
+  const BOM = [0xef, 0xbb, 0xbf];
+  const withCode = (code: number[]) =>
+    keyOf(2, [2, ...NAME, ...table(BUILT_INS, [0xfe, 0, ...str(code)]), 0]);
+  const codeIn = (key: string) => decodePackKey(key).buckets?.find((b) => "color" in b)?.code;
+
+  it("reads blank input as empty", () => {
+    expect(codeOf(" \t\n")).toBe("empty");
+  });
+
+  it("drops one leading byte order mark from a string, and only one", () => {
+    expect(codeIn(withCode([...BOM, 0x41]))).toBe("A");
+    expect(codeOf(withCode([...BOM, ...BOM, 0x41]))).toBe("malformed");
+  });
+
+  it("ignores the unused bits of the last base64url character", () => {
+    const key = encodePackKey({ name: "ab", slots: [{ mod: "NM", index: 1, beatmapId: 1 }] });
+    expect(key).toBe("pk1.AQJhYgEAAQEETQ");
+    for (const last of "QRSTUVWXYZabcdef") {
+      expect(decodePackKey(`${key.slice(0, -1)}${last}`)).toStrictEqual(decodePackKey(key));
+    }
+  });
+
+  it("trims ECMAScript whitespace only", () => {
+    const key = keyOf(1, [1, ...NAME, 0]);
+    expect(codeOf(`　﻿${key} `)).toBe("ok");
+    for (const other of ["\u0085", "᠎", "​"]) {
+      expect(codeOf(`${other}${key}`)).toBe("prefix");
+    }
+    expect(decodePackKey(keyOf(1, [1, ...str(utf8("　a ")), 0])).name).toBe("a");
+  });
+
+  it("counts code points in a code and takes letters and numbers from any script", () => {
+    expect(codeOf(withCode(utf8("𝒜".repeat(12))))).toBe("ok");
+    expect(codeOf(withCode(utf8("𝒜".repeat(13))))).toBe("malformed");
+    for (const ok of ["Ü", "難", "Ⅻ", "½"]) expect(codeOf(withCode(utf8(ok)))).toBe("ok");
+    expect(codeOf(withCode(utf8("é")))).toBe("malformed");
+  });
+
+  it("compares codes after toUpperCase (full mapping, no locale)", () => {
+    const two = (a: string, b: string) =>
+      codeOf(
+        keyOf(2, [
+          2,
+          ...NAME,
+          ...table(BUILT_INS, [0xfe, 0, ...str(utf8(a))], [0xfe, 1, ...str(utf8(b))]),
+          0,
+        ]),
+      );
+    for (const [a, b] of [
+      ["ß", "SS"],
+      ["ı", "I"],
+      ["ſ", "S"],
+      ["ﬀ", "FF"],
+    ] as const) {
+      expect(two(a, b)).toBe("malformed");
+    }
+    expect(two("i", "İ")).toBe("ok");
+    expect(codeOf(withCode(utf8("hd")))).toBe("malformed");
   });
 });

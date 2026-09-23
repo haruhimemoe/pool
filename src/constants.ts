@@ -2,7 +2,7 @@
  * @file src/constants.ts
  * @desc Pool limits, the six built-in mod buckets, custom bucket rules, and the custom bucket
  *       color palette. MOD_BUCKETS and PALETTE order are pack key wire values: append only, never
- *       reorder.
+ *       reorder. Every exported table is frozen: apps share one copy.
  * @author David @dvhsh (https://dvh.sh)
  * @created Tue Sep 22, 2026
  * @modified Wed Sep 23, 2026
@@ -12,18 +12,18 @@ export const MAX_SLOTS = 64;
 export const MAX_NAME_LENGTH = 64;
 export const MAX_SLOT_INDEX = 99;
 
-export const MOD_BUCKETS = ["NM", "HD", "HR", "DT", "FM", "TB"] as const;
+export const MOD_BUCKETS = Object.freeze(["NM", "HD", "HR", "DT", "FM", "TB"] as const);
 
 export type ModBucket = (typeof MOD_BUCKETS)[number];
 
-export const MOD_BUCKET_NAMES: Record<ModBucket, string> = {
+export const MOD_BUCKET_NAMES: Readonly<Record<ModBucket, string>> = Object.freeze({
   NM: "No Mod",
   HD: "Hidden",
   HR: "Hard Rock",
   DT: "Double Time",
   FM: "Free Mod",
   TB: "Tiebreaker",
-};
+});
 
 /**
  * @function isModBucket
@@ -44,7 +44,7 @@ export const NO_SLOT_NAME = "No slot";
  * The colors a custom bucket can pick, by stored id (the index). Names only: each app maps them
  * to its own styles. Append only.
  */
-export const PALETTE = [
+export const PALETTE = Object.freeze([
   "Green",
   "Teal",
   "Pink",
@@ -55,6 +55,6 @@ export const PALETTE = [
   "Red",
   "Indigo",
   "Stone",
-] as const;
+] as const);
 
 export const PALETTE_SIZE = PALETTE.length;

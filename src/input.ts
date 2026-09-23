@@ -15,7 +15,7 @@ import {
   nextFreeColor,
   slotLabel,
 } from "./buckets.js";
-import { MAX_CUSTOM_BUCKETS } from "./constants.js";
+import { MAX_CUSTOM_BUCKETS, MAX_SLOT_INDEX, NO_SLOT_NAME } from "./constants.js";
 import { nextSlotIndex } from "./pool.js";
 import {
   type BucketEntry,
@@ -29,11 +29,12 @@ export type BeatmapRefResult =
   | { ok: true; beatmapId: number }
   | { ok: false; reason: "set-only" | "unrecognized" };
 
-export const BEATMAP_REF_MESSAGES: Record<"set-only" | "unrecognized", string> = {
-  "set-only":
-    "That link is a whole beatmapset. Open the difficulty you want on osu! and copy that link.",
-  unrecognized: "Paste a beatmap ID or an osu.ppy.sh beatmap link.",
-};
+export const BEATMAP_REF_MESSAGES: Readonly<Record<"set-only" | "unrecognized", string>> =
+  Object.freeze({
+    "set-only":
+      "That link is a whole beatmapset. Open the difficulty you want on osu! and copy that link.",
+    unrecognized: "Paste a beatmap ID or an osu.ppy.sh beatmap link.",
+  });
 
 const DIFFICULTY_LINKS = [
   /osu\.ppy\.sh\/beatmapsets\/\d+\/?#(?:osu|taiko|fruits|mania)\/(\d+)/i,
@@ -76,8 +77,9 @@ export const POOL_LINE_HELP =
 /**
  * Why a line was skipped: `set-only` (a beatmapset link, not a difficulty), `unrecognized` (not a
  * slot line or an ID), `bad-index` (slot 0), `bad-beatmap` (the slot's map isn't an ID or link),
- * `full` (no room for another custom slot), `duplicate` (the same slot twice). `reason` is English
- * text; show your own wording by `code` if you prefer.
+ * `full` (no room for another custom slot), `duplicate` (the same slot twice), `full-group` (a
+ * no-slot map would be numbered past 99; the IDs before it on the line are kept). `reason` is
+ * English text; show your own wording by `code` if you prefer.
  */
 export type SlotLineErrorCode =
   | "set-only"
@@ -85,7 +87,8 @@ export type SlotLineErrorCode =
   | "bad-index"
   | "bad-beatmap"
   | "full"
-  | "duplicate";
+  | "duplicate"
+  | "full-group";
 
 export type SlotLineError = { line: number; text: string; code: SlotLineErrorCode; reason: string };
 
@@ -155,6 +158,10 @@ export const parsePoolText = (
       for (const token of tokens) {
         const ref = parseBeatmapRef(token);
         if (!ref.ok) break;
+        if (noSlotIndex > MAX_SLOT_INDEX) {
+          fail("full-group", `${NO_SLOT_NAME} is full: slot numbers stop at ${MAX_SLOT_INDEX}.`);
+          break;
+        }
         slots.push({ mod: null, index: noSlotIndex++, beatmapId: ref.beatmapId });
       }
       return;
@@ -175,7 +182,8 @@ export const parsePoolText = (
     }
     const index = parts.index === undefined ? 1 : Number(parts.index);
     if (index < 1) {
-      fail("bad-index", "Slot numbers start at 1.");
+      // "NM100 5" lands here too: it reads as NM1, slot 00.
+      fail("bad-index", `Slot numbers go from 1 to ${MAX_SLOT_INDEX}.`);
       return;
     }
     const ref = parseBeatmapRef(parts.ref);

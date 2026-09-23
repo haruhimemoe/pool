@@ -21,7 +21,10 @@ import {
 import { modSetProblem, type SlotMods } from "./mods.js";
 import type { BucketEntry, CustomBucket, Pool, SlotBucket } from "./schema.js";
 
-export const DEFAULT_BUCKETS: readonly BucketEntry[] = MOD_BUCKETS.map((code) => ({ code }));
+/** The six built-ins in default order. Frozen, entries included: every pool without a list shares it. */
+export const DEFAULT_BUCKETS: readonly Readonly<BucketEntry>[] = Object.freeze(
+  MOD_BUCKETS.map((code) => Object.freeze({ code })),
+);
 
 /**
  * @function isCustomBucket
@@ -33,11 +36,12 @@ export const isCustomBucket = (entry: BucketEntry): entry is CustomBucket => "co
 /**
  * @function bucketsOf
  * @param pool {{ buckets? }} a pool
- * @returns {readonly BucketEntry[]} its bucket list, or the default when it has none
+ * @returns {readonly Readonly<BucketEntry>[]} its bucket list, or the default when it has none (a
+ *          read-only view: edit through the bucket functions)
  */
 export const bucketsOf = (pool: {
   buckets?: readonly BucketEntry[] | undefined;
-}): readonly BucketEntry[] => pool.buckets ?? DEFAULT_BUCKETS;
+}): readonly Readonly<BucketEntry>[] => pool.buckets ?? DEFAULT_BUCKETS;
 
 const sameEntry = (a: BucketEntry, b: BucketEntry): boolean =>
   a.code === b.code &&
@@ -126,14 +130,14 @@ export const slotLabel = (slot: { mod: SlotBucket; index: number }): string => {
 export const slotTitle = (slot: { mod: SlotBucket; index: number }): string =>
   slot.mod === null ? `${NO_SLOT_NAME} ${slot.index}` : slotLabel(slot);
 
-export const BUCKET_CODE_MESSAGES = {
+export const BUCKET_CODE_MESSAGES = Object.freeze({
   empty: "Type a code for the slot.",
   long: `Slot codes are at most ${MAX_BUCKET_CODE_LENGTH} characters.`,
   chars: "Use letters and digits only.",
   builtIn: "That's a built-in slot.",
   taken: "This pool already has a slot with that code.",
   full: `A pool can have at most ${MAX_CUSTOM_BUCKETS} custom slots.`,
-} as const;
+} as const);
 
 export type BucketCodeError = keyof typeof BUCKET_CODE_MESSAGES;
 
