@@ -1,0 +1,128 @@
+[
+  {
+    "label": "pk1 one map",
+    "pack": { "name": "a", "slots": [{ "mod": "HR", "index": 2, "beatmapId": 300 }] },
+    "key": "pk1.AQFhAQICrAKFPA"
+  },
+  {
+    "label": "pk1 every built-in",
+    "pack": {
+      "name": "EGC Quals",
+      "slots": [
+        { "mod": "NM", "index": 1, "beatmapId": 129891 },
+        { "mod": "NM", "index": 2, "beatmapId": 2116202 },
+        { "mod": "HD", "index": 1, "beatmapId": 129891 },
+        { "mod": "HR", "index": 1, "beatmapId": 1872396 },
+        { "mod": "DT", "index": 1, "beatmapId": 75 },
+        { "mod": "FM", "index": 1, "beatmapId": 4000000 },
+        { "mod": "TB", "index": 1, "beatmapId": 1872396 }
+      ]
+    },
+    "key": "pk1.AQlFR0MgUXVhbHMHAAHj9gcAAuqUgQEBAeP2BwIBjKRyAwFLBAGAkvQBBQGMpHLUew"
+  },
+  {
+    "label": "pk1 unicode name",
+    "pack": {
+      "name": "春の大会 🌸 Finals",
+      "slots": [{ "mod": "NM", "index": 1, "beatmapId": 1 }]
+    },
+    "key": "pk1.ARjmmKXjga7lpKfkvJog8J-MuCBGaW5hbHMBAAEBrBo"
+  },
+  {
+    "label": "pk1 max ids",
+    "pack": {
+      "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "slots": [{ "mod": "TB", "index": 99, "beatmapId": 2147483647 }]
+    },
+    "key": "pk1.AUB4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4AQVj_____wcRGA"
+  },
+  {
+    "label": "pk2 custom slot",
+    "pack": {
+      "name": "Custom",
+      "slots": [
+        { "mod": "EZ", "index": 1, "beatmapId": 300 },
+        { "mod": null, "index": 1, "beatmapId": 5 },
+        { "mod": "NM", "index": 1, "beatmapId": 7 }
+      ],
+      "buckets": [
+        { "code": "TB" },
+        { "code": "NM" },
+        { "code": "HD" },
+        { "code": "HR" },
+        { "code": "EZ", "color": 0 },
+        { "code": "DT" },
+        { "code": "FM" }
+      ]
+    },
+    "key": "pk2.AgZDdXN0b20HBQABAv4AAkVaAwQD_wEFAQEHBAGsAtx3"
+  },
+  {
+    "label": "pk2 reordered built-ins",
+    "pack": {
+      "name": "Order",
+      "slots": [
+        { "mod": "DT", "index": 1, "beatmapId": 10 },
+        { "mod": "NM", "index": 1, "beatmapId": 11 }
+      ],
+      "buckets": [
+        { "code": "DT" },
+        { "code": "NM" },
+        { "code": "HD" },
+        { "code": "HR" },
+        { "code": "FM" },
+        { "code": "TB" }
+      ]
+    },
+    "key": "pk2.AgVPcmRlcgYDAAECBAUCAAEKAQELWOs"
+  },
+  {
+    "label": "pk2 no-slot map only",
+    "pack": { "name": "a", "slots": [{ "mod": null, "index": 1, "beatmapId": 1 }] },
+    "key": "pk2.AgFhBgABAgMEBQH_AQFYnA"
+  },
+  {
+    "label": "pk2 unicode code, last color",
+    "pack": {
+      "name": "a",
+      "slots": [
+        { "mod": null, "index": 1, "beatmapId": 5 },
+        { "mod": "É", "index": 2, "beatmapId": 300 }
+      ],
+      "buckets": [
+        { "code": "NM" },
+        { "code": "HD" },
+        { "code": "HR" },
+        { "code": "DT" },
+        { "code": "FM" },
+        { "code": "É", "color": 9 },
+        { "code": "TB" }
+      ]
+    },
+    "key": "pk2.AgFhBwABAgME_gkCw4kFAv8BBQUCrALisQ"
+  },
+  {
+    "label": "pk2 eight customs",
+    "pack": {
+      "name": "Big",
+      "slots": [{ "mod": "C8", "index": 3, "beatmapId": 99999999 }],
+      "buckets": [
+        { "code": "NM" },
+        { "code": "HD" },
+        { "code": "HR" },
+        { "code": "DT" },
+        { "code": "FM" },
+        { "code": "C1", "color": 0 },
+        { "code": "C2", "color": 1 },
+        { "code": "C3", "color": 2 },
+        { "code": "C4", "color": 3 },
+        { "code": "C5", "color": 4 },
+        { "code": "C6", "color": 5 },
+        { "code": "C7", "color": 6 },
+        { "code": "C8", "color": 7 },
+        { "code": "TB" }
+      ]
+    },
+    "key": "pk2.AgNCaWcOAAECAwT-AAJDMf4BAkMy_gICQzP-AwJDNP4EAkM1_gUCQzb-BgJDN_4HAkM4BQEMA__B1y8H0A"
+  }
+]
