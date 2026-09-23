@@ -1,24 +1,21 @@
 # Changelog
 
-All notable changes to `@haruhimemoe/pool`. Pack keys never change for an existing pool; a new key format is a new version.
+All notable changes to `@haruhimemoe/pool` are documented in this file.
 
-## 0.1.0 (unreleased)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Pack keys never change for an existing pool; a new key format is a new key version.
 
-- First release, extracted from packs.haruhime.moe: the pool shape and zod schemas, mods on custom slots, bucket and slot editing, pasted-pool parsing, and the pk1/pk2/pk3 pack key codec.
-- Renamed from packs' code: `PackRef` is `Pool`, `PackSlotRef` is `PoolSlot`, `packRefSchema` is `poolSchema`, `packDraftSchema` is `poolDraftSchema`, `packRefFields` is `poolFields`, `checkPackBuckets` is `checkPoolBuckets`. The key functions keep their names.
-- Messages say "pool" instead of "pack". The key `version` error no longer names packs.
-- `freemodSets` and `modSetsFor` take a `Ruleset` ("osu" | "taiko" | "fruits" | "mania").
-- `PALETTE` lists color names only. Apps map ids to their own styles.
-- `parsePoolText` errors have a `code` (`SlotLineErrorCode`) next to the English `reason`, and the custom slot limit message uses `MAX_CUSTOM_BUCKETS`.
-- The unused `ModdedRating` type isn't carried over.
-- `docs/pack-key.md` is written as the format's spec, with the decoder rules another implementation needs.
-- zod peer range `^4.0.16`, the oldest release the published types work with.
-- Shared tables are frozen (`DEFAULT_BUCKETS` and its entries, `NO_MODS` and the built-in `SlotMods`, `PALETTE`, `MOD_BUCKETS`, `MOD_ACRONYMS`, `RULESETS`, `PACK_KEY_VERSIONS`, `MOD_BUCKET_NAMES` and every `*_MESSAGES` record). `SlotMods` is read-only, and `bucketsOf` returns `readonly Readonly<BucketEntry>[]`.
-- `parsePoolText` reports `full-group` for a no-slot map that would be numbered past 99, and says "Slot numbers go from 1 to 99." for a bad slot number.
-- `planMerge` drops slots that fail `poolSlotSchema` and, given the pool's buckets as a new third argument, slots in an unknown bucket. `mergeSlots` passes them, so it never builds an invalid pool.
-- `removeSlot` returns the same pool when no slot matches (it used to renumber anyway).
-- Pool names with a lone surrogate fail validation: a key can't carry them.
-- `extractPackKey` ignores a `pk1.` glued to the end of a word (`apk1.…`).
-- The key `version` message no longer assumes the key is newer: it can also be damaged.
-- `docs/pack-key.md` spells out the decoder's exact whitespace set, byte order mark handling, base64 tail bits, code point counting, uppercasing and Unicode-version caveat, and the `empty` code. No key decodes differently.
-- The full export list is in the README.
+## [Unreleased]
+
+## [0.1.0] - 2026-09-23
+
+### Added
+
+- The `Pool` shape and zod schemas (`poolSchema`, `poolDraftSchema`, `poolFields`), with zod `^4.0.16` as a peer dependency.
+- Mods on custom slots: forced sets (1 to 3, never EZ with HR or DT with HT) or freemod, with helpers for star-rating mod sets.
+- Pure bucket and slot editing (`addSlot`, `moveSlot`, `mergeSlots`, `addBucket`, …); a refused edit returns the same object.
+- `parsePoolText` for pasted pools, spreadsheet rows and osu! links, with coded errors.
+- The pack key codec: `encodePackKey`, `decodePackKey` and `extractPackKey` for `pk1.`, `pk2.` and `pk3.` keys, byte for byte compatible with packs.haruhime.moe.
+- `docs/pack-key.md`, the key format's specification, including the exact decoder rules.
+
+[unreleased]: https://github.com/haruhimemoe/pool/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/haruhimemoe/pool/releases/tag/v0.1.0
