@@ -8,7 +8,7 @@ An osu! tournament mappool as data, shared by the haruhime.moe tools (packs, poo
 - **Pasted pools:** beatmap IDs, osu! links and spreadsheet rows like `NM1 129891` turned into slots.
 - **Pack keys:** the `pk1.` / `pk2.` / `pk3.` text that carries a whole pool. The format is specified in [docs/pack-key.md](docs/pack-key.md).
 
-It has no network, no storage and no UI. It runs in browsers, Node 22.12+, Bun and edge runtimes.
+It has no network, no storage and no UI. See Compatibility below for supported runtimes.
 
 ## Install
 
@@ -72,27 +72,14 @@ That's every runtime export; `tests/exports.test.ts` pins the list. The shared t
 
 ## Compatibility
 
-Keys are forever. Every `pk1.`, `pk2.` and `pk3.` key ever made must open, and the same pool must always produce the same key. Three test sets guard this:
+Runs in browsers, Node 22.12+, Bun and edge runtimes. `zod` `^4.0.16` is a peer dependency (see Install).
 
-- `tests/fixtures/legacy-keys.json`: hand-picked keys, pinned since each version shipped.
-- `tests/fixtures/packs-keys.json`: 400 random pools that packs.haruhime.moe's own codec encoded and decoded, and 400 damaged keys with the answer packs gave, recorded at a known packs commit. This package must match every one. packs.haruhime.moe's repository is private, so this file is a frozen record: `scripts/gen-packs-keys.ts` shows how it was made, but only the owner can rerun it.
-- `tests/key-decoder.test.ts`: hand-built keys for each rule in the spec's "Decoder rules".
-
-A new key format is a new version (`pk4.`). It gets a section in [docs/pack-key.md](docs/pack-key.md), and older pools keep their keys.
+Keys are forever: every `pk1.`, `pk2.` and `pk3.` key ever made keeps opening, and the same pool always produces the same key. The repo's tests prove it against hand-picked keys, hand-built decoder cases, and a frozen 800-case record made from packs.haruhime.moe's own codec; see [CONTRIBUTING.md](CONTRIBUTING.md#tests) for details. A new key format is a new version (`pk4.`). It gets a section in [docs/pack-key.md](docs/pack-key.md), and older pools keep their keys.
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
 
-## Develop
+## Contributing
 
-```sh
-bun install
-bun run check && bun run typecheck && bun run test && bun run test:dist
-```
-
-### Releasing
-
-Releases publish from GitHub through `.github/workflows/release.yml` with npm trusted publishing. A version with a prerelease part (`0.2.0-rc.1`) goes to the `next` dist-tag, anything else to `latest`.
-
-npm only lets you add a trusted publisher to a package that already exists, so the first 0.1.0 is published by hand. From a clean checkout of the tagged commit, run `bun install --frozen-lockfile`, `bun run build` and every check above, then `npm publish --access public --provenance=false`. Then add the trusted publisher (npm 11.15.0 or later, with 2FA): `npm trust github @haruhimemoe/pool --file release.yml --repo haruhimemoe/pool --env npm --allow-publish`. Every later release goes through release.yml.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Changes are logged in [CHANGELOG.md](CHANGELOG.md).
