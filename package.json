@@ -8,7 +8,9 @@
     "tournament",
     "mappool",
     "pool",
-    "pack key"
+    "beatmap",
+    "pack key",
+    "zod"
   ],
   "homepage": "https://github.com/haruhimemoe/pool#readme",
   "bugs": "https://github.com/haruhimemoe/pool/issues",
