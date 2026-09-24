@@ -1,6 +1,6 @@
 /**
  * @file tests/key-legacy.test.ts
- * @desc Old keys never break (qol spec §5.1): every recorded pk1/pk2 key decodes to the same pool,
+ * @desc Old keys never break: every recorded pk1/pk2 key decodes to the same pool,
  *       and that pool still encodes to the exact same key. Never edit the fixture; a failure here
  *       means an existing key changed.
  * @author David @dvhsh (https://dvh.sh)

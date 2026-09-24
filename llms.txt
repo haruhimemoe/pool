@@ -1,0 +1,43 @@
+# @haruhimemoe/pool
+
+> An osu! tournament mappool as data, as a TypeScript package: the pool shape and its zod schemas, mod rules for custom slots (forced or freemod), pure editing functions that return the same object when they refuse, a parser for pasted pools (beatmap IDs, osu! links, rows like `NM1 129891`), and the `pk1.` / `pk2.` / `pk3.` pack key codec that packs.haruhime.moe uses. No network, storage or UI. zod 4.0.16 or later in 4.x is a peer dependency. Runs in browsers, Node 22.12+, Bun and edge runtimes.
+
+Words: a bucket is a group of slots (the built-ins `NM`, `HD`, `HR`, `DT`, `FM`, `TB`, plus up to 8 custom ones like `RC`), a slot is a map's place in a bucket (`NM1`), and a `PoolSlot`'s `mod` field is its bucket's code or `null` for a map with no slot. The same pool always encodes to the same key, and every key ever made keeps opening.
+
+## Docs
+
+- [README](https://github.com/haruhimemoe/pool#readme): What the package is, install, examples and the full API.
+- [Install](https://github.com/haruhimemoe/pool#install): The install command and the zod peer range.
+- [Use](https://github.com/haruhimemoe/pool#use): Build a pool, encode and decode a pack key, merge a pasted pool, handle `PackKeyError`.
+- [Words](https://github.com/haruhimemoe/pool#words): Bucket, slot, and what `mod` on a `PoolSlot` means.
+- [API: shape and validation](https://github.com/haruhimemoe/pool#shape-and-validation): `poolSchema`, `poolDraftSchema`, `poolFields`, `checkPoolBuckets` and the other schemas.
+- [API: limits and names](https://github.com/haruhimemoe/pool#limits-and-names): `MAX_SLOTS`, `MOD_BUCKETS`, `PALETTE` and the other constants.
+- [API: mods](https://github.com/haruhimemoe/pool#mods): Forced set rules, `toggleMod`, `slotModsFor`, the pk3 bitmask, star rating mod sets.
+- [API: buckets](https://github.com/haruhimemoe/pool#buckets): Custom slot edits (`addBucket`, `renameBucket`, `setBucketMods`, …), code checks and labels.
+- [API: slots](https://github.com/haruhimemoe/pool#slots): `addSlot`, `removeSlot`, `moveSlot`, `mergeSlots`, `planMerge`, `sortSlots`.
+- [API: pasted text](https://github.com/haruhimemoe/pool#pasted-text): `parsePoolText` line rules and error codes, `parseBeatmapRef`.
+- [API: pack keys](https://github.com/haruhimemoe/pool#pack-keys): `encodePackKey`, `decodePackKey`, `extractPackKey`, `PackKeyError` codes.
+- [API: edge behavior](https://github.com/haruhimemoe/pool#edge-behavior): Refused edits, fields bucket edits drop, frozen tables, Unicode tables.
+- [Compatibility](https://github.com/haruhimemoe/pool#compatibility): Runtimes, module format, and the keys-are-forever guarantee.
+- [Pack key specification](https://github.com/haruhimemoe/pool/blob/main/docs/pack-key.md): The byte layout of each key version.
+- [Decoder rules](https://github.com/haruhimemoe/pool/blob/main/docs/pack-key.md#decoder-rules): Every check a decoder makes, in order, with the error code for each, so other implementations accept and refuse the same keys.
+
+## Package
+
+- [npm](https://www.npmjs.com/package/@haruhimemoe/pool): `@haruhimemoe/pool` on the npm registry.
+- [Source](https://github.com/haruhimemoe/pool): The GitHub repository.
+- [Entry point](https://github.com/haruhimemoe/pool/blob/main/src/index.ts): The module list the package re-exports.
+
+## Related
+
+- [packs.haruhime.moe](https://packs.haruhime.moe): Builds osu! mappool packs and shares them with pack keys, using this package. It has its own [llms.txt](https://packs.haruhime.moe/llms.txt).
+- [Pack keys guide](https://packs.haruhime.moe/guide/pack-key): What a pack key is and how to share one, for players and hosts.
+- [@haruhimemoe/osu](https://github.com/haruhimemoe/osu): osu! API v2 shapes and client, including star ratings with mods.
+- [haruhime.moe](https://haruhime.moe): The haruhime.moe tools.
+
+## Optional
+
+- [CHANGELOG](https://github.com/haruhimemoe/pool/blob/main/CHANGELOG.md): Release history.
+- [CONTRIBUTING](https://github.com/haruhimemoe/pool/blob/main/CONTRIBUTING.md): Setup, checks and the test fixtures.
+- [AGENTS.md](https://github.com/haruhimemoe/pool/blob/main/AGENTS.md): Conventions and invariants for AI agents changing this repo.
+- [SECURITY](https://github.com/haruhimemoe/pool/blob/main/SECURITY.md): How to report a vulnerability.

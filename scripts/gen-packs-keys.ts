@@ -2,10 +2,9 @@
  * @file scripts/gen-packs-keys.ts
  * @desc Builds random pools and damaged keys, runs them through packs.haruhime.moe's own codec,
  *       and prints the answers as JSON (tests/fixtures/packs-keys.json), with the packs commit.
- *       Run `bun scripts/gen-packs-keys.ts <packs root> > tests/fixtures/packs-keys.json`; it only
- *       reads packs. Seeded, so reruns at the same commit match. Only rerun it against a packs
- *       that still has its own codec: once packs uses this package, it would compare the package
- *       with itself.
+ *       Kept as the record of how that frozen fixture was made (`bun scripts/gen-packs-keys.ts
+ *       <packs root>`, seeded, read-only on packs). Never rerun it to replace the fixture: packs
+ *       now uses this package, so a rerun would compare the package with itself.
  * @author David @dvhsh (https://dvh.sh)
  * @created Wed Sep 23, 2026
  * @modified Wed Sep 23, 2026
