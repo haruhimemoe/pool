@@ -239,7 +239,7 @@ Each error is `{ line, text, code, reason }`: a 1-based line number, the trimmed
 | `checksum` | Fails the checksum, usually because it was cut off or mistyped. |
 | `malformed` | Breaks one of the byte or pool rules in [the spec's decoder rules](docs/pack-key.md#decoder-rules). |
 
-The same pool always gives the same key, and decoding a key and encoding the result gives the key back. The byte layout of each version is in [docs/pack-key.md](docs/pack-key.md).
+The same pool always gives the same key. Decoding a key an encoder wrote and encoding the result gives the same key back. A hand-built key that is valid but not canonical (a written-out default table, say) still opens, and re-encodes to the canonical key; the full list is in [the spec's decoder rules](docs/pack-key.md#decoder-rules). The byte layout of each version is in [docs/pack-key.md](docs/pack-key.md).
 
 ### Types
 
