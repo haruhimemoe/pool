@@ -34,7 +34,7 @@ Words: a bucket is a group of slots (the built-ins `NM`, `HD`, `HR`, `DT`, `FM`,
 - [pools.haruhime.moe](https://pools.haruhime.moe): Searches past osu! tournament mappools and their maps, and checks a pool against the content rules for officially supported tournaments, using this package. In beta. It has its own [llms.txt](https://pools.haruhime.moe/llms.txt).
 - [Pack keys guide](https://packs.haruhime.moe/guide/pack-key): What a pack key is and how to share one, for players and hosts.
 - [@haruhimemoe/osu](https://github.com/haruhimemoe/osu): osu! API v2 shapes and client, including star ratings with mods.
-- [haruhime.moe](https://haruhime.moe): The haruhime.moe tools.
+- [haruhime.moe](https://www.haruhime.moe): The haruhime.moe tools.
 
 ## Optional
 
