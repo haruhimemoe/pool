@@ -139,7 +139,7 @@ type StoredPool = z.infer<typeof storedPoolSchema>;
 | `modSetsFor(mods, mode)` | The mod sets to calculate star ratings for: none, the forced set, or `freemodSets(mode)`. |
 | `freemodSets(mode)` | The sets a freemod slot shows: HD, HR, HD+HR and EZ, or only HD on mania. |
 | `modsToBitmask(set)` | The pk3 bitmask: EZ 1, HD 2, HR 4, DT 8, HT 16, FL 32. |
-| `bitmaskToMods(mask)` | The reverse, in canonical order. Throws a `RangeError` for a bit no mod uses, a negative number or a fraction. |
+| `bitmaskToMods(mask)` | The reverse, in canonical order. Throws a `RangeError` for anything but a whole number from 0 up whose bits all belong to mods. |
 | `modsLabel(set)` | `"HDHR"`, or `""` for no mods. |
 | `slotModsSummary(mods)` | `"Forced HD DT"`, `"Freemod"`, or `null` for no mods. |
 | `RULESETS` | `["osu", "taiko", "fruits", "mania"]`, as the osu! API names them. |
