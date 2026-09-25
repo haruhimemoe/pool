@@ -17,5 +17,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The pack key codec: `encodePackKey`, `decodePackKey` and `extractPackKey` for `pk1.`, `pk2.` and `pk3.` keys, byte for byte compatible with packs.haruhime.moe.
 - `docs/pack-key.md`, the key format's specification, including the exact decoder rules.
 
-[unreleased]: https://github.com/haruhimemoe/pool/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/haruhimemoe/pool/releases/tag/v0.1.0
+[unreleased]: https://github.com/haruhimemoe/pool/compare/45a21de34de0bcc1795914bf258768fe8a0e84fe...HEAD
+[0.1.0]: https://github.com/haruhimemoe/pool/tree/45a21de34de0bcc1795914bf258768fe8a0e84fe

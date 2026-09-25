@@ -1,6 +1,6 @@
 # AGENTS.md
 
-`@haruhimemoe/pool`: an osu! tournament mappool as data. Shape, validation, mod rules, pure edits, pasted-text parsing, and the pack key codec (`pk1.`, `pk2.`, `pk3.`). No network, storage or UI. packs.haruhime.moe depends on it.
+`@haruhimemoe/pool`: an osu! tournament mappool as data. Shape, validation, mod rules, pure edits, pasted-text parsing, and the pack key codec (`pk1.`, `pk2.`, `pk3.`). No network, storage or UI. packs.haruhime.moe and pools.haruhime.moe depend on it.
 
 ## Rules
 

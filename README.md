@@ -1,6 +1,8 @@
+<p align="center"><a href="https://github.com/haruhimemoe/pool"><picture><source media="(prefers-color-scheme: light)" srcset="https://www.haruhime.moe/brand/repos/pool-banner-on-light.svg"><img alt="@haruhimemoe/pool" src="https://www.haruhime.moe/brand/repos/pool-banner.svg" width="640"></picture></a></p>
+
 # @haruhimemoe/pool
 
-An osu! tournament mappool as data. It's part of the haruhime.moe tools, and [packs.haruhime.moe](https://packs.haruhime.moe) uses it.
+An osu! tournament mappool as data. It's part of the haruhime.moe tools: [packs.haruhime.moe](https://packs.haruhime.moe) and [pools.haruhime.moe](https://pools.haruhime.moe) (in beta) use it.
 
 - **The shape:** a name, slots (`NM1`, `HD2`, `TB1`, custom slots like `RC1`, and maps with no slot), and the bucket list, with zod schemas that validate it.
 - **Mods:** which mods a custom slot forces (1 to 3, no EZ+HR or DT+HT) or whether it's freemod, and which mod sets a slot's star ratings are for.
@@ -171,7 +173,7 @@ type StoredPool = z.infer<typeof storedPoolSchema>;
 
 The edits return the same pool when they refuse:
 
-- `addBucket`: a bad code or color.
+- `addBucket`: a bad color, or a code `checkBucketCode` refuses, including when the pool already has 8 custom slots.
 - `renameBucket`: a built-in, an unknown code, the same code, or a bad new code.
 - `recolorBucket`: a built-in, an unknown code, or a bad color.
 - `moveBucket`: an unknown code, a position out of range, or the position it's already in.
