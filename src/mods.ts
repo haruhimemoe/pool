@@ -1,8 +1,8 @@
 /**
  * @file src/mods.ts
  * @desc Mods on slots: the six mods a slot can force, which sets are valid and their canonical
- *       order, the pk3 bitmask, what each bucket plays with (SlotMods), and which mod sets a
- *       slot's star ratings are calculated for. MOD_ACRONYMS order is the pk3 bitmask (bit i =
+ *       order, the pk3 bitmask, what each bucket plays with (SlotMods), which mod sets a slot's
+ *       star ratings are calculated for, and which mods change a star rating and the speed. MOD_ACRONYMS order is the pk3 bitmask (bit i =
  *       MOD_ACRONYMS[i]): append only, never reorder. Imports only types from schema.ts, because
  *       schema.ts imports this module.
  * @author David @dvhsh (https://dvh.sh)
@@ -203,4 +203,50 @@ export const modSetsFor = (mods: SlotMods, mode: Ruleset): readonly (readonly Mo
 export const slotModsSummary = (mods: SlotMods): string | null => {
   if (mods.kind === "none") return null;
   return mods.kind === "free" ? "Freemod" : `Forced ${mods.set.join(" ")}`;
+};
+
+/**
+ * Mods that change a map's star rating, as sources write them: NC plays as DT and DC as HT. HD
+ * and freemod don't: a slot without these counts with the plain rating.
+ */
+const RATING_MOD_OF: ReadonlyMap<string, ModAcronym> = new Map([
+  ["EZ", "EZ"],
+  ["HR", "HR"],
+  ["DT", "DT"],
+  ["NC", "DT"],
+  ["HT", "HT"],
+  ["DC", "HT"],
+  ["FL", "FL"],
+]);
+
+/**
+ * @function ratingMods
+ * @param mods {readonly string[]} mods as a slot forces them or a source writes them, any case
+ *        ("ez", "NC", "HD")
+ * @returns {ModAcronym[]} the ones that change the star rating (EZ, HR, DT, HT, FL; NC as DT, DC
+ *          as HT), each once, in canonical order
+ */
+export const ratingMods = (mods: readonly string[]): ModAcronym[] => {
+  const found = new Set(mods.flatMap((mod) => RATING_MOD_OF.get(mod.toUpperCase()) ?? []));
+  return MOD_ACRONYMS.filter((mod) => found.has(mod));
+};
+
+/**
+ * @function changesStarRating
+ * @param mods {readonly string[]} a forced set, or mods as a source writes them
+ * @returns {boolean} true when osu! rates the map differently with them (they hold EZ, HR, DT,
+ *          HT, FL, NC or DC); a slot forcing only HD counts with the plain rating
+ */
+export const changesStarRating = (mods: readonly string[]): boolean => ratingMods(mods).length > 0;
+
+/**
+ * @function speedRate
+ * @param mods {readonly string[]} a forced set, or mods as a source writes them
+ * @returns {number} 1.5 with DT or NC, 0.75 with HT or DC, else 1: length divides by it and BPM
+ *          multiplies by it
+ */
+export const speedRate = (mods: readonly string[]): number => {
+  const rated = ratingMods(mods);
+  if (rated.includes("DT")) return 1.5;
+  return rated.includes("HT") ? 0.75 : 1;
 };

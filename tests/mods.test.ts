@@ -1,15 +1,18 @@
 /**
  * @file tests/mods.test.ts
  * @desc Mod sets: validation and canonical order, toggles and disabled reasons, the pk3 bitmask
- *       (every bit and the edges), what each bucket plays with, and which sets get rated.
+ *       (every bit and the edges), what each bucket plays with, which sets get rated, and which
+ *       mods change a star rating and the speed (checked against packs' and pools' own copies).
  * @author David @dvhsh (https://dvh.sh)
  * @created Wed Sep 23, 2026
- * @modified Wed Sep 23, 2026
+ * @modified Mon Sep 28, 2026
  */
 
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import {
   bitmaskToMods,
+  changesStarRating,
   freemodSets,
   isModAcronym,
   MAX_FORCED_MODS,
@@ -21,9 +24,11 @@ import {
   modsLabel,
   modsToBitmask,
   NO_MODS,
+  ratingMods,
   type SlotMods,
   slotModsFor,
   slotModsSummary,
+  speedRate,
   toggleMod,
 } from "../src/mods.js";
 
@@ -174,5 +179,114 @@ describe("slotModsSummary", () => {
     [{ kind: "free" }, "Freemod"],
   ])("%j -> %j", (mods, text) => {
     expect(slotModsSummary(mods)).toBe(text);
+  });
+});
+
+// packs.haruhime.moe's rules (src/constants/pack-stats.ts, src/utils/saved-pack-stats.ts) and
+// pools.haruhime.moe's (src/utils/source-pools.ts, src/utils/mod-values.ts), as the apps had them.
+const PACKS_RATING_MODS: readonly string[] = ["EZ", "HR", "DT", "HT", "FL"];
+const PACKS_SPEED_RATES: Readonly<Record<string, number>> = { DT: 1.5, HT: 0.75 };
+const packsSpeedOf = (set: readonly string[]): number => {
+  for (const mod of set) {
+    const rate = PACKS_SPEED_RATES[mod];
+    if (rate !== undefined) return rate;
+  }
+  return 1;
+};
+const poolsClockRate = (mods: readonly string[]): number => {
+  if (mods.includes("DT")) return 1.5;
+  return mods.includes("HT") ? 0.75 : 1;
+};
+const POOLS_RATING_MODS: Readonly<Record<string, string>> = {
+  EZ: "EZ",
+  HR: "HR",
+  DT: "DT",
+  NC: "DT",
+  HT: "HT",
+  DC: "HT",
+  FL: "FL",
+};
+const poolsRatingModsOf = (mods: readonly string[]): string[] => {
+  const found = new Set(mods.flatMap((mod) => POOLS_RATING_MODS[mod.toUpperCase()] ?? []));
+  return MOD_ACRONYMS.filter((mod) => found.has(mod));
+};
+
+/** Every forced set a custom slot can hold: all canonical, valid subsets of MOD_ACRONYMS. */
+const VALID_SETS = Array.from({ length: 1 << MOD_ACRONYMS.length }, (_, mask) =>
+  bitmaskToMods(mask),
+).filter((set) => modSetProblem(set) === null);
+
+describe("changesStarRating", () => {
+  it.each([["EZ"], ["HR"], ["DT"], ["HT"], ["FL"], ["HD", "DT"], ["NC"], ["dc"]])(
+    "is true for %j",
+    (...set) => {
+      expect(changesStarRating(set)).toBe(true);
+    },
+  );
+
+  it.each([[[]], [["HD"]], [["SD", "PF"]], [["nm"]]])("is false for %j", (set) => {
+    expect(changesStarRating(set)).toBe(false);
+  });
+
+  it("answers like packs for every forced set a slot can hold", () => {
+    for (const set of VALID_SETS) {
+      expect(changesStarRating(set)).toBe(set.some((mod) => PACKS_RATING_MODS.includes(mod)));
+    }
+  });
+});
+
+describe("speedRate", () => {
+  it("is 1.5 with DT, 0.75 with HT and 1 otherwise", () => {
+    expect(speedRate(["HD", "DT"])).toBe(1.5);
+    expect(speedRate(["EZ", "HT"])).toBe(0.75);
+    expect(speedRate(["HR", "FL"])).toBe(1);
+    expect(speedRate([])).toBe(1);
+  });
+
+  it("reads NC as DT and DC as HT, in any case", () => {
+    expect(speedRate(["NC"])).toBe(1.5);
+    expect(speedRate(["hd", "nc"])).toBe(1.5);
+    expect(speedRate(["DC"])).toBe(0.75);
+  });
+
+  it("answers like packs and pools for every forced set a slot can hold", () => {
+    for (const set of VALID_SETS) {
+      expect(speedRate(set)).toBe(packsSpeedOf(set));
+      expect(speedRate(set)).toBe(poolsClockRate(set));
+    }
+  });
+});
+
+describe("ratingMods", () => {
+  it.each([
+    [
+      ["ez", "NC", "HD"],
+      ["EZ", "DT"],
+    ],
+    [
+      ["EZ", "DC"],
+      ["EZ", "HT"],
+    ],
+    [
+      ["FL", "HR", "HD"],
+      ["HR", "FL"],
+    ],
+    [["DT", "NC"], ["DT"]],
+    [["HD", "SD", "PF", "NM"], []],
+  ])("keeps the rating mods of %j in canonical order", (mods, rated) => {
+    expect(ratingMods(mods)).toEqual(rated);
+  });
+
+  it("answers like pools for any mods a source writes", () => {
+    const token = fc.constantFrom(
+      ...["EZ", "HD", "HR", "DT", "NC", "HT", "DC", "FL", "SD", "PF", "SO", "nc", "dc", "ez"],
+      ...["", "toString", "__proto__", "\u{FB02}", "Dt"],
+    );
+    fc.assert(
+      fc.property(fc.array(token, { maxLength: 8 }), (mods) => {
+        expect(ratingMods(mods)).toEqual(poolsRatingModsOf(mods));
+        expect(changesStarRating(mods)).toBe(ratingMods(mods).length > 0);
+      }),
+    );
   });
 });

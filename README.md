@@ -142,6 +142,9 @@ type StoredPool = z.infer<typeof storedPoolSchema>;
 | `bitmaskToMods(mask)` | The reverse, in canonical order. Throws a `RangeError` for anything but a whole number from 0 up whose bits all belong to mods. |
 | `modsLabel(set)` | `"HDHR"`, or `""` for no mods. |
 | `slotModsSummary(mods)` | `"Forced HD DT"`, `"Freemod"`, or `null` for no mods. |
+| `changesStarRating(mods)` | `true` when the mods change a map's star rating: EZ, HR, DT, HT or FL (NC and DC too, any case). A slot forcing only HD, and a freemod slot, count with the plain rating. |
+| `ratingMods(mods)` | The mods that change the star rating, each once, in canonical order. Takes mods as a source writes them: `["ez", "NC", "HD"]` gives `["EZ", "DT"]`. |
+| `speedRate(mods)` | `1.5` with DT or NC, `0.75` with HT or DC, else `1`. A map's length divides by it and its BPM multiplies by it. |
 | `RULESETS` | `["osu", "taiko", "fruits", "mania"]`, as the osu! API names them. |
 
 ### Buckets
