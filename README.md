@@ -9,6 +9,7 @@ An osu! tournament mappool as data. It's part of the haruhime.moe tools: [packs.
 - **Editing:** pure functions to add, move, remove and merge slots and to add, rename, recolor, reorder and remove custom slots. A refused edit returns the same object, so UI code can compare by reference.
 - **Pasted pools:** beatmap IDs, osu! links and spreadsheet rows like `NM1 129891` turned into slots.
 - **Pack keys:** the `pk1.` / `pk2.` / `pk3.` text that carries a whole pool. The format is specified in [docs/pack-key.md](docs/pack-key.md).
+- **Shared rules for the sites:** which mods change a star rating and the speed, a blocklist for published names (`@haruhimemoe/pool/content-filter`), and the schemas packs.haruhime.moe and pools.haruhime.moe send each other (`@haruhimemoe/pool/service`).
 
 It has no network, no storage and no UI. See [Compatibility](#compatibility) for supported runtimes.
 

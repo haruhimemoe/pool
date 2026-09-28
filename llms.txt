@@ -1,6 +1,6 @@
 # @haruhimemoe/pool
 
-> An osu! tournament mappool as data, as a TypeScript package: the pool shape and its zod schemas, mod rules for custom slots (forced or freemod), pure editing functions that return the same object when they refuse, a parser for pasted pools (beatmap IDs, osu! links, rows like `NM1 129891`), and the `pk1.` / `pk2.` / `pk3.` pack key codec that packs.haruhime.moe and pools.haruhime.moe use. No network, storage or UI. zod 4.0.16 or later in 4.x is a peer dependency. Runs in browsers, Node 22.12+, Bun and edge runtimes.
+> An osu! tournament mappool as data, as a TypeScript package: the pool shape and its zod schemas, mod rules for custom slots (forced or freemod), pure editing functions that return the same object when they refuse, a parser for pasted pools (beatmap IDs, osu! links, rows like `NM1 129891`), and the `pk1.` / `pk2.` / `pk3.` pack key codec that packs.haruhime.moe and pools.haruhime.moe use. Two more entry points hold rules the two sites share: `@haruhimemoe/pool/content-filter` (a slur and hate slogan blocklist) and `@haruhimemoe/pool/service` (the schemas pools sends packs and packs answers with). No network, storage or UI. zod 4.0.16 or later in 4.x is a peer dependency. Runs in browsers, Node 22.12+, Bun and edge runtimes.
 
 Words: a bucket is a group of slots (the built-ins `NM`, `HD`, `HR`, `DT`, `FM`, `TB`, plus up to 8 custom ones like `RC`), a slot is a map's place in a bucket (`NM1`), and a `PoolSlot`'s `mod` field is its bucket's code or `null` for a map with no slot. The same pool always encodes to the same key, and every key ever made keeps opening.
 
@@ -12,11 +12,14 @@ Words: a bucket is a group of slots (the built-ins `NM`, `HD`, `HR`, `DT`, `FM`,
 - [Words](https://github.com/haruhimemoe/pool#words): Bucket, slot, and what `mod` on a `PoolSlot` means.
 - [API: shape and validation](https://github.com/haruhimemoe/pool#shape-and-validation): `poolSchema`, `poolDraftSchema`, `poolFields`, `checkPoolBuckets` and the other schemas.
 - [API: limits and names](https://github.com/haruhimemoe/pool#limits-and-names): `MAX_SLOTS`, `MOD_BUCKETS`, `PALETTE` and the other constants.
-- [API: mods](https://github.com/haruhimemoe/pool#mods): Forced set rules, `toggleMod`, `slotModsFor`, the pk3 bitmask, star rating mod sets.
-- [API: buckets](https://github.com/haruhimemoe/pool#buckets): Custom slot edits (`addBucket`, `renameBucket`, `setBucketMods`, …), code checks and labels.
+- [API: mods](https://github.com/haruhimemoe/pool#mods): Forced set rules, `toggleMod`, `slotModsFor`, the pk3 bitmask, star rating mod sets, `changesStarRating`, `ratingMods` and `speedRate`.
+- [API: buckets](https://github.com/haruhimemoe/pool#buckets): Custom slot edits (`addBucket`, `renameBucket`, `setBucketMods`, …) and code checks (`checkBucketCode`).
+- [API: labels](https://github.com/haruhimemoe/pool#labels): `slotLabel`, `slotTitle`, `bucketName`, and `displayPoolName` for untrusted pool names.
 - [API: slots](https://github.com/haruhimemoe/pool#slots): `addSlot`, `removeSlot`, `moveSlot`, `mergeSlots`, `planMerge`, `sortSlots`.
 - [API: pasted text](https://github.com/haruhimemoe/pool#pasted-text): `parsePoolText` line rules and error codes, `parseBeatmapRef`.
 - [API: pack keys](https://github.com/haruhimemoe/pool#pack-keys): `encodePackKey`, `decodePackKey`, `extractPackKey`, `PackKeyError` codes.
+- [API: content filter](https://github.com/haruhimemoe/pool#content-filter): `hasBlockedLanguage` from `@haruhimemoe/pool/content-filter`.
+- [API: service contract](https://github.com/haruhimemoe/pool#service-contract): `packInputSchema`, `poolsPackBodySchema` and packs' answers from `@haruhimemoe/pool/service`.
 - [API: edge behavior](https://github.com/haruhimemoe/pool#edge-behavior): Refused edits, fields bucket edits drop, frozen tables, Unicode tables.
 - [Compatibility](https://github.com/haruhimemoe/pool#compatibility): Runtimes, module format, and the keys-are-forever guarantee.
 - [Pack key specification](https://github.com/haruhimemoe/pool/blob/main/docs/pack-key.md): The byte layout of each key version.
@@ -26,7 +29,7 @@ Words: a bucket is a group of slots (the built-ins `NM`, `HD`, `HR`, `DT`, `FM`,
 
 - [npm](https://www.npmjs.com/package/@haruhimemoe/pool): `@haruhimemoe/pool` on the npm registry.
 - [Source](https://github.com/haruhimemoe/pool): The GitHub repository.
-- [Entry point](https://github.com/haruhimemoe/pool/blob/main/src/index.ts): The module list the package re-exports.
+- [Entry point](https://github.com/haruhimemoe/pool/blob/main/src/index.ts): The module list the main entry point re-exports. [src/content-filter.ts](https://github.com/haruhimemoe/pool/blob/main/src/content-filter.ts) and [src/service.ts](https://github.com/haruhimemoe/pool/blob/main/src/service.ts) are the other two.
 
 ## Related
 

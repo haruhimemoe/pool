@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-28
+
 ### Added
 
 - `@haruhimemoe/pool/service`, the contract between pools.haruhime.moe and packs.haruhime.moe: `packInputSchema`, `poolsPackBodySchema` (the `PUT /api/service/pools/{ref}` body), `poolsRefSchema`, `poolsSyncAnswerSchema`, `poolsStatsAnswerSchema`, `MAX_DESCRIPTION_LENGTH` and the visibilities. Each app had its own copy, and pools couldn't check the description limit.
@@ -38,5 +40,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The pack key codec: `encodePackKey`, `decodePackKey` and `extractPackKey` for `pk1.`, `pk2.` and `pk3.` keys, byte for byte compatible with packs.haruhime.moe.
 - `docs/pack-key.md`, the key format's specification, including the exact decoder rules.
 
-[unreleased]: https://github.com/haruhimemoe/pool/compare/45a21de34de0bcc1795914bf258768fe8a0e84fe...HEAD
+[unreleased]: https://github.com/haruhimemoe/pool/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/haruhimemoe/pool/compare/45a21de34de0bcc1795914bf258768fe8a0e84fe...v0.2.0
 [0.1.0]: https://github.com/haruhimemoe/pool/tree/45a21de34de0bcc1795914bf258768fe8a0e84fe
