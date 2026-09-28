@@ -203,9 +203,9 @@ The edits return the same pool when they refuse:
 
 How `parsePoolText` reads each line:
 
-- Blank lines and lines starting with `#` are skipped.
+- Lines end at LF, CRLF, a lone CR, U+2028 or U+2029. Blank lines and lines starting with `#` are skipped.
 - A line that starts with an ID or difficulty link is an ID line. Each ID or link up to the first other token (spaces or commas between them) becomes a map with no slot, numbered after the pool's highest. The rest of the line is ignored, so `129891 Freedom Dive` works.
-- Anything else is a slot line: a code, an optional slot number (1 when left out), an optional `:`, `.` or `-`, a space, then an ID or difficulty link. Text after that is ignored. `NM1 129891`, `hd2: https://osu.ppy.sh/b/75` and `EZ 5` all work. A code that ends in a digit takes its number after a space: `RC1 2 555` is RC1 slot 2.
+- Anything else is a slot line: a code, an optional slot number (1 when left out), an optional `:`, `.` or `-`, a space, then an ID or difficulty link. Text after that, or after a comma, is ignored: `NM1 129891, Freedom Dive` works. `NM1 129891`, `hd2: https://osu.ppy.sh/b/75` and `EZ 5` all work. A code that ends in a digit takes its number after a space: `RC1 2 555` is RC1 slot 2.
 - Codes match the pool's buckets ignoring case. An unknown code becomes a new custom slot in `newBuckets`, with the next free color, before TB. Add them with `addBuckets` before `mergeSlots`.
 - `slots` holds the maps in paste order. The same slot twice in one paste is an error; a slot the pool already has is not (`mergeSlots` replaces it).
 

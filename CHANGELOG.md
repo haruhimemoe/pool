@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- `parsePoolText` splits lines on a lone CR, U+2028 and U+2029 too. Before, every line after the first was lost without an error.
+- `parsePoolText` reads a slot line whose beatmap is followed by a comma (`NM1 129891, Freedom Dive`), as ID lines already did.
+
 ## [0.1.0] - 2026-09-23
 
 ### Added

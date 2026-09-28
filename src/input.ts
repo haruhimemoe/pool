@@ -75,8 +75,10 @@ export const parseBeatmapRef = (token: string): BeatmapRefResult => {
 
 /** A whole bucket code, as regex source. */
 const CODE = `${CODE_CHAR}{1,${MAX_BUCKET_CODE_LENGTH}}`;
+/** A slot line's beatmap: up to the next space or comma ("NM1 129891, Freedom Dive"). */
+const REF = "([^\\s,]+)";
 /** "[<n>][:.-] <id or link>": what follows a slot's code. */
-const SLOT_REST = "\\s?(\\d{1,2})?\\s*[:.-]?\\s+(\\S+)";
+const SLOT_REST = `\\s?(\\d{1,2})?\\s*[:.-]?\\s+${REF}`;
 /** "<code>[<n>][:.-] <id or link>" after a code that is already known. */
 const AFTER_CODE = new RegExp(`^${SLOT_REST}`, "u");
 /** Same, for a code we haven't seen: 1-12 letters/digits, shortest first so "EZ1" is EZ + 1. */
@@ -106,7 +108,7 @@ export type SlotLineError = { line: number; text: string; code: SlotLineErrorCod
 type LineParts = { code: string; index: string | undefined; ref: string };
 
 /** "<code> <n> <id or link>" with a space before the slot number: the whole first token is the code. */
-const SPACED_LINE = new RegExp(`^(${CODE})\\s+(\\d{1,2})\\s*[:.-]?\\s+(\\S+)`, "u");
+const SPACED_LINE = new RegExp(`^(${CODE})\\s+(\\d{1,2})\\s*[:.-]?\\s+${REF}`, "u");
 
 /**
  * Longest known code first, so an "RC1" bucket wins over reading "RC" + index 1. A code ending
@@ -135,6 +137,9 @@ const splitSpacedCode = (line: string): LineParts | null => {
   return { code: match[1], index: match[2], ref: match[3] ?? "" };
 };
 
+/** CRLF, LF, a lone CR (old Mac and some spreadsheet clipboards), and U+2028 and U+2029. */
+const LINE_BREAK = /\r\n|[\n\r\u2028\u2029]/;
+
 /**
  * @function parsePoolText
  * @param text {string} pasted pool: slot lines ("NM1 129891", "EZ2: <link>") and/or ID lines
@@ -155,7 +160,7 @@ export const parsePoolText = (
   let list: BucketEntry[] = [...bucketsOf(pool)];
   let noSlotIndex = nextSlotIndex(pool.slots, null);
 
-  text.split(/\r?\n/).forEach((raw, i) => {
+  text.split(LINE_BREAK).forEach((raw, i) => {
     const line = raw.trim();
     if (line === "" || line.startsWith("#")) return;
     const fail = (code: SlotLineErrorCode, reason: string) =>

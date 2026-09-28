@@ -3,7 +3,7 @@
  * @desc Parsing beatmap IDs/links and pasted mappool lines.
  * @author David @dvhsh (https://dvh.sh)
  * @created Tue Sep 22, 2026
- * @modified Tue Sep 22, 2026
+ * @modified Mon Sep 28, 2026
  */
 
 import { describe, expect, it } from "vitest";
@@ -165,6 +165,37 @@ describe("parsePoolText", () => {
 
   it("handles Windows line endings", () => {
     expect(parsePoolText("NM1 1\r\nNM2 2\r\n", EMPTY).slots).toHaveLength(2);
+  });
+
+  it.each([
+    ["a lone CR", "\r"],
+    ["a line separator", "\u2028"],
+    ["a paragraph separator", "\u2029"],
+  ])("splits lines on %s, so no line is lost without an error", (_label, separator) => {
+    const { slots, errors } = parsePoolText(
+      ["NM1 129891", "NM2 x", "HD1 75"].join(separator),
+      EMPTY,
+    );
+    expect(slots).toEqual([
+      { mod: "NM", index: 1, beatmapId: 129891 },
+      { mod: "HD", index: 1, beatmapId: 75 },
+    ]);
+    expect(errors).toMatchObject([{ line: 2, code: "bad-beatmap" }]);
+  });
+
+  it("counts CRLF as one line break for line numbers", () => {
+    expect(parsePoolText("NM1 1\r\n\r\nnope", EMPTY).errors).toMatchObject([{ line: 3 }]);
+  });
+
+  it.each([
+    ["NM1 129891, Freedom Dive", { mod: "NM", index: 1, beatmapId: 129891 }],
+    ["NM2: 75,", { mod: "NM", index: 2, beatmapId: 75 }],
+    ["RC1 2 555, x", { mod: "RC1", index: 2, beatmapId: 555 }],
+    ["hd1 https://osu.ppy.sh/b/75,", { mod: "HD", index: 1, beatmapId: 75 }],
+  ])("reads a slot line whose beatmap is followed by a comma (%j)", (line, slot) => {
+    const { slots, errors } = parsePoolText(line, EMPTY);
+    expect(errors).toEqual([]);
+    expect(slots).toEqual([slot]);
   });
 
   it("doesn't turn a numbered list into a slot called 1", () => {
