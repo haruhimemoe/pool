@@ -6,8 +6,10 @@
  * @modified Mon Sep 28, 2026
  */
 
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { addBucket, moveBucket } from "../src/bucket-edits.js";
+import { bucketsOf } from "../src/buckets.js";
 import { MAX_SLOTS } from "../src/constants.js";
 import {
   addSlot,
@@ -18,9 +20,11 @@ import {
   removeSlot,
   sortSlots,
 } from "../src/pool.js";
-import type { Pool } from "../src/schema.js";
+import { type Pool, type PoolSlot, slotKey } from "../src/schema.js";
 
 const pack = (slots: Pool["slots"]): Pool => ({ name: "p", slots });
+const sameSlot = (a: PoolSlot, b: PoolSlot) =>
+  slotKey(a) === slotKey(b) && a.beatmapId === b.beatmapId;
 const labels = (p: Pool) => p.slots.map((s) => `${s.mod ?? "-"}${s.index}:${s.beatmapId}`);
 
 describe("sortSlots", () => {
@@ -129,6 +133,49 @@ describe("planMerge", () => {
     expect(plan.added.map((s) => `${s.mod}${s.index}`)).toEqual(["HD1", "HD2"]);
     expect(plan.replaced.map((s) => `${s.mod}${s.index}`)).toEqual(["NM1"]);
     expect(plan.dropped.map((s) => `${s.mod}${s.index}`)).toEqual(["HD3"]);
+  });
+
+  it("counts the same slot twice in incoming once, the last one winning", () => {
+    const twice = [
+      { mod: "NM", index: 1, beatmapId: 5 },
+      { mod: "NM", index: 1, beatmapId: 6 },
+    ];
+    expect(planMerge([], twice)).toEqual({ added: [twice[1]], replaced: [], dropped: [] });
+    const nine = [{ mod: "NM", index: 1, beatmapId: 9 }];
+    const back = [{ mod: "NM", index: 1, beatmapId: 5 }, ...nine];
+    expect(planMerge(nine, back)).toEqual({ added: [], replaced: [], dropped: [] });
+    expect(mergeSlots(pack(nine), back)).toEqual(pack(nine));
+  });
+
+  it("drops a bad copy of a slot without losing a good one", () => {
+    const bad = { mod: "NM", index: 1, beatmapId: 0 };
+    const good = { mod: "NM", index: 1, beatmapId: 5 };
+    expect(planMerge([], [good, bad])).toEqual({ added: [good], replaced: [], dropped: [bad] });
+    expect(planMerge([], [bad, good])).toEqual({ added: [good], replaced: [], dropped: [bad] });
+  });
+
+  it("previews mergeSlots exactly", () => {
+    const slot = fc.record({
+      mod: fc.constantFrom("NM", "HD", "XX", null),
+      index: fc.integer({ min: 0, max: 4 }),
+      beatmapId: fc.integer({ min: 1, max: 3 }),
+    });
+    const valid = fc.uniqueArray(
+      slot.filter((s) => s.index > 0 && s.mod !== "XX"),
+      { selector: slotKey, maxLength: 8 },
+    );
+    fc.assert(
+      fc.property(valid, fc.array(slot, { maxLength: 12 }), (slots, incoming) => {
+        const pool = pack(slots);
+        const plan = planMerge(pool.slots, incoming, bucketsOf(pool));
+        const merged = mergeSlots(pool, incoming);
+        const keys = (list: PoolSlot[]) => list.map(slotKey);
+        expect(merged.slots.length - pool.slots.length).toBe(plan.added.length);
+        expect(keys(plan.added).filter((key) => keys(plan.replaced).includes(key))).toEqual([]);
+        for (const s of [...plan.added, ...plan.replaced]) expect(merged.slots).toContainEqual(s);
+        expect(plan.replaced.every((s) => !pool.slots.some((p) => sameSlot(p, s)))).toBe(true);
+      }),
+    );
   });
 });
 

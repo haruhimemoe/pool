@@ -4,7 +4,7 @@
  *       pool when an edit is refused). Pool order: no-slot maps, then the pool's buckets in order.
  * @author David @dvhsh (https://dvh.sh)
  * @created Tue Sep 22, 2026
- * @modified Wed Sep 23, 2026
+ * @modified Mon Sep 28, 2026
  */
 
 import { bucketsOf, DEFAULT_BUCKETS, findBucket } from "./buckets.js";
@@ -118,34 +118,35 @@ export type MergePlan = { added: PoolSlot[]; replaced: PoolSlot[]; dropped: Pool
  *        that isn't in it is dropped. Leave it out to preview a paste before its new buckets exist.
  * @returns {MergePlan} new slots that fit, slots that swap in a different map, and dropped slots:
  *          new ones past MAX_SLOTS, any that fail poolSlotSchema (a number past 99, a bad beatmap
- *          ID), and any in an unknown bucket. An incoming slot identical to an existing one is in
- *          none of the lists.
+ *          ID), and any in an unknown bucket. The same slot twice in incoming counts once: the last
+ *          good copy, in the first copy's place. A slot identical to an existing one is in none of
+ *          the lists.
  */
 export const planMerge = (
   slots: readonly PoolSlot[],
   incoming: readonly PoolSlot[],
   buckets?: readonly BucketEntry[],
 ): MergePlan => {
-  const byKey = new Map(slots.map((s) => [slotKey(s), s]));
   const plan: MergePlan = { added: [], replaced: [], dropped: [] };
+  const wanted = new Map<string, PoolSlot>();
   for (const slot of incoming) {
     const unknownBucket =
       buckets !== undefined && slot.mod !== null && findBucket(buckets, slot.mod) === undefined;
-    if (unknownBucket || !poolSlotSchema.safeParse(slot).success) {
-      plan.dropped.push(slot);
-      continue;
-    }
-    const key = slotKey(slot);
-    const current = byKey.get(key);
-    if (current) {
-      if (current.beatmapId !== slot.beatmapId) plan.replaced.push(slot);
-    } else if (byKey.size < MAX_SLOTS) {
+    if (unknownBucket || !poolSlotSchema.safeParse(slot).success) plan.dropped.push(slot);
+    else wanted.set(slotKey(slot), slot);
+  }
+  const current = new Map(slots.map((s) => [slotKey(s), s]));
+  let size = current.size;
+  for (const [key, slot] of wanted) {
+    const existing = current.get(key);
+    if (existing) {
+      if (existing.beatmapId !== slot.beatmapId) plan.replaced.push(slot);
+    } else if (size < MAX_SLOTS) {
       plan.added.push(slot);
+      size++;
     } else {
       plan.dropped.push(slot);
-      continue;
     }
-    byKey.set(key, slot);
   }
   return plan;
 };

@@ -190,7 +190,7 @@ The edits return the same pool when they refuse:
 | `removeSlot(pool, mod, index)` | Removes a map. Later maps in the same group move down one. Refuses when no map matches. |
 | `moveSlot(pool, from, to)` | Moves the map at `from` (`{ mod, index }`) to the end of group `to` and closes the gap. Refuses a missing map, the same group, a target group that already reaches 99, or a bucket the pool doesn't have. |
 | `mergeSlots(pool, incoming)` | Upserts maps by (bucket, number). Replacements always apply, new maps stop at 64, and anything `planMerge` drops is left out, so a valid pool stays valid. |
-| `planMerge(slots, incoming, buckets?)` | `{ added, replaced, dropped }`. Dropped: new maps past 64, maps that fail `poolSlotSchema`, and, when `buckets` is given, maps in a bucket not in it. Pass `bucketsOf(pool)` to preview `mergeSlots` exactly; leave it out to preview a paste before its new custom slots exist. A map identical to one already there is in no list. |
+| `planMerge(slots, incoming, buckets?)` | `{ added, replaced, dropped }`. Dropped: new maps past 64, maps that fail `poolSlotSchema`, and, when `buckets` is given, maps in a bucket not in it. Pass `bucketsOf(pool)` to preview `mergeSlots` exactly; leave it out to preview a paste before its new custom slots exist. The same slot twice in `incoming` counts once, with the last good copy's map. A map identical to one already there is in no list. |
 
 ### Pasted text
 

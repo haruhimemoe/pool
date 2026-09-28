@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - `parsePoolText` splits lines on a lone CR, U+2028 and U+2029 too. Before, every line after the first was lost without an error.
 - `parsePoolText` reads a slot line whose beatmap is followed by a comma (`NM1 129891, Freedom Dive`), as ID lines already did.
+- `planMerge` counts the same slot twice in `incoming` once, so it previews `mergeSlots` exactly. Before, one slot could be both added and replaced, and a slot pasted back to its current map was reported as replaced.
 - `moveBucket` (and `withBuckets`) put the slots in the new pool order. Before, they kept the old order, unlike every other edit and `decodePackKey`.
 
 ## [0.1.0] - 2026-09-23
