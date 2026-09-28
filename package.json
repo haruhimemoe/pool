@@ -26,6 +26,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./content-filter": {
+      "types": "./dist/content-filter.d.ts",
+      "default": "./dist/content-filter.js"
+    },
     "./package.json": "./package.json"
   },
   "types": "./dist/index.d.ts",

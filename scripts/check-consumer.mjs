@@ -6,7 +6,7 @@
  *       version> (after `bun run build`). Needs the npm registry.
  * @author David @dvhsh (https://dvh.sh)
  * @created Wed Sep 23, 2026
- * @modified Wed Sep 23, 2026
+ * @modified Mon Sep 28, 2026
  */
 
 import { execFileSync } from "node:child_process";
@@ -54,6 +54,7 @@ try {
     path.join(dir, "consumer.ts"),
     `import { z } from "zod";
 import { decodePackKey, encodePackKey, type Pool, poolFields, checkPoolBuckets, storedSlotModsSchema, type StoredSlotMods } from "@haruhimemoe/pool";
+import { hasBlockedLanguage } from "@haruhimemoe/pool/content-filter";
 
 const pool: Pool = { name: "Quals", slots: [{ mod: "NM", index: 1, beatmapId: 129891 }] };
 const stored = poolFields.extend({ description: z.string() }).superRefine(checkPoolBuckets);
@@ -64,6 +65,8 @@ const bad: StoredSlotMods = { kind: "nonsense" };
 if (!storedSlotModsSchema.safeParse({ kind: "free" }).success) throw new Error("free mods rejected");
 if (stored.safeParse({ ...value, slots: [{ mod: "XX", index: 1, beatmapId: 1 }] }).success) throw new Error("bad slot accepted");
 if (JSON.stringify(decodePackKey(encodePackKey(pool))) !== JSON.stringify(pool)) throw new Error("round trip");
+const blocked: boolean = hasBlockedLanguage(pool.name);
+if (blocked) throw new Error("content filter");
 void bad;
 console.log("consumer: ok");
 `,

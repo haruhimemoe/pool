@@ -73,7 +73,7 @@ Why "pack key" and not "pool key"? That's the format's name: packs.haruhime.moe 
 
 ## API
 
-Every runtime export is below, grouped by area. The package exports nothing else (a test pins the list), and everything comes from the package root, `@haruhimemoe/pool`.
+Every runtime export is below, grouped by area. The package exports nothing else (a test pins the list). Everything comes from the package root, `@haruhimemoe/pool`, except the [content filter](#content-filter), which has its own entry point.
 
 ### Shape and validation
 
@@ -254,6 +254,22 @@ Each error is `{ line, text, code, reason }`: a 1-based line number, the trimmed
 | `malformed` | Breaks one of the byte or pool rules in [the spec's decoder rules](docs/pack-key.md#decoder-rules). |
 
 The same pool always gives the same key. Decoding a key an encoder wrote and encoding the result gives the same key back. A hand-built key that is valid but not canonical (a written-out default table, say) still opens, and re-encodes to the canonical key; the full list is in [the spec's decoder rules](docs/pack-key.md#decoder-rules). The byte layout of each version is in [docs/pack-key.md](docs/pack-key.md).
+
+### Content filter
+
+```ts
+import { hasBlockedLanguage } from "@haruhimemoe/pool/content-filter";
+
+hasBlockedLanguage("Scunthorpe Cup"); // false
+```
+
+A basic blocklist for text people publish, such as pool names, descriptions and custom slot codes. It lives at its own entry point, `@haruhimemoe/pool/content-filter`, so the word list loads only in code that imports it.
+
+| Export | What it does |
+| --- | --- |
+| `hasBlockedLanguage(text)` | `true` when `text` holds a slur or a hate slogan. Ordinary swearing passes. It sees through case, accents, common leetspeak, Cyrillic lookalikes, stretched letters, single separators (`r.e.t.a.r.d`) and invisible characters, and matches whole words, so words that contain a term (Niger, spice, Pakistan) pass. |
+
+It's a first line, not moderation: keep a way for people to hide what gets through. packs.haruhime.moe and pools.haruhime.moe use the same list, so a name one site accepts, the other accepts too.
 
 ### Types
 

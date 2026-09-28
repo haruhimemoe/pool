@@ -1,14 +1,32 @@
 /**
  * @file tests/exports.test.ts
- * @desc The public surface: exactly these runtime exports, so an accidental export or removal
- *       shows up in review as a semver question.
+ * @desc The public surface of every entry point: exactly these runtime exports, so an accidental
+ *       export or removal shows up in review as a semver question; package.json maps each entry
+ *       point, and the main entry never loads the content filter's word list.
  * @author David @dvhsh (https://dvh.sh)
  * @created Wed Sep 23, 2026
  * @modified Mon Sep 28, 2026
  */
 
+import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
+import * as contentFilter from "../src/content-filter.js";
 import * as api from "../src/index.js";
+
+const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+
+/** Every src/ module a module loads at runtime, itself included (type-only imports aside). */
+const loads = (module: string, seen = new Set<string>()): Set<string> => {
+  if (seen.has(module)) return seen;
+  seen.add(module);
+  const source = readFileSync(new URL(`../src/${module}.ts`, import.meta.url), "utf8");
+  for (const [, next] of source.matchAll(
+    /^(?:import|export) (?!type )[^;]*?from "\.\/([\w-]+)\.js";/gms,
+  )) {
+    if (next) loads(next, seen);
+  }
+  return seen;
+};
 
 it("exports the documented runtime API", () => {
   expect(Object.keys(api).sort()).toMatchInlineSnapshot(`
@@ -100,4 +118,21 @@ it("exports the documented runtime API", () => {
       "withBuckets",
     ]
   `);
+});
+
+it("exports the content filter from its own entry point", () => {
+  expect(Object.keys(contentFilter).sort()).toEqual(["hasBlockedLanguage"]);
+});
+
+it("never loads the content filter's word list from the main entry point", () => {
+  expect(loads("index").has("bucket-edits")).toBe(true);
+  expect(loads("index").has("content-filter")).toBe(false);
+});
+
+it("maps every entry point in package.json", () => {
+  expect(Object.keys(pkg.exports)).toEqual([".", "./content-filter", "./package.json"]);
+  expect(pkg.exports["./content-filter"]).toEqual({
+    types: "./dist/content-filter.d.ts",
+    default: "./dist/content-filter.js",
+  });
 });
