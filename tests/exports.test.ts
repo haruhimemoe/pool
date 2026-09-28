@@ -4,7 +4,7 @@
  *       shows up in review as a semver question.
  * @author David @dvhsh (https://dvh.sh)
  * @created Wed Sep 23, 2026
- * @modified Wed Sep 23, 2026
+ * @modified Mon Sep 28, 2026
  */
 
 import { expect, it } from "vitest";
@@ -52,6 +52,7 @@ it("exports the documented runtime API", () => {
       "checkPoolBuckets",
       "customBucketSchema",
       "decodePackKey",
+      "displayPoolName",
       "encodePackKey",
       "extractPackKey",
       "findBucket",

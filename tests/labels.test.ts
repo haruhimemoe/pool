@@ -13,7 +13,13 @@ import { addBucket } from "../src/bucket-edits.js";
 import { bucketsOf } from "../src/buckets.js";
 import { MAX_SLOT_INDEX } from "../src/constants.js";
 import { parsePoolText } from "../src/input.js";
-import { bucketName, bucketOptionLabel, slotLabel, slotTitle } from "../src/labels.js";
+import {
+  bucketName,
+  bucketOptionLabel,
+  displayPoolName,
+  slotLabel,
+  slotTitle,
+} from "../src/labels.js";
 import { type Pool, slotKey } from "../src/schema.js";
 
 describe("labels", () => {
@@ -63,6 +69,35 @@ describe("slot labels read back", () => {
         expect(parsePoolText(text, pool)).toEqual({ slots, newBuckets: [], errors: [] });
       }),
       { numRuns: 500 },
+    );
+  });
+});
+
+describe("displayPoolName", () => {
+  it.each([
+    ["EGC Quals", "EGC Quals"],
+    ["  Quals  ", "Quals"],
+    ["a\u0000b", "a b"],
+    ["line\r\nbreak", "line break"],
+    ["tab\there", "tab here"],
+    ["esc\u001b[31mred", "esc [31mred"],
+    ["para\u2029graph\u2028line", "para graph line"],
+    ["evil\u202Egpj.exe", "evilgpj.exe"],
+    ["\u2066isolate\u2069 \u200Fmarks\u200E\u061C", "isolate marks"],
+    ["\u202E", ""],
+    ["日本語 🌸 Cup", "日本語 🌸 Cup"],
+    ["family 👨\u200D👩\u200D👧", "family 👨\u200D👩\u200D👧"],
+  ])("shows %j as %j", (name, shown) => {
+    expect(displayPoolName(name)).toBe(shown);
+  });
+
+  it("returns text with no control or bidi characters for any name", () => {
+    fc.assert(
+      fc.property(fc.string({ unit: "binary" }), (name) => {
+        expect(displayPoolName(name)).not.toMatch(
+          /[\p{Cc}\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069\u2028\u2029]/u,
+        );
+      }),
     );
   });
 });

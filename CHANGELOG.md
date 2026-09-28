@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `displayPoolName(name)`: a pool name safe to show and store, with control characters and line breaks turned into spaces and bidi controls removed. Keys carry names as typed, so the README now says to treat them as untrusted.
+
 ### Changed
 
 - `checkBucketCode` refuses a code that is another slot's code plus a number (`NM1` next to `NM`, `RC` next to `RC1`) with the new `clash` error, so `addBucket` and `renameBucket` refuse it too. With both codes, `slotLabel` prints NM slot 1 as `NM1`, which `parsePoolText` reads as NM1's slot 1. Pools that already have such codes still validate and open.

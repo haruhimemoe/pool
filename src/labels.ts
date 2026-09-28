@@ -1,7 +1,8 @@
 /**
  * @file src/labels.ts
- * @desc What UI shows for buckets and slots: bucket names and select labels, and slot labels
- *       ("NM1", "RC1 2") that the pasted-pool parser reads back as the same slot.
+ * @desc What UI shows for a pool: bucket names and select labels, slot labels ("NM1", "RC1 2")
+ *       that the pasted-pool parser reads back as the same slot, and a pool name made safe to
+ *       show (keys carry names as typed, control and bidi characters included).
  * @author David @dvhsh (https://dvh.sh)
  * @created Mon Sep 28, 2026
  * @modified Mon Sep 28, 2026
@@ -47,3 +48,19 @@ export const slotLabel = (slot: { mod: SlotBucket; index: number }): string => {
  */
 export const slotTitle = (slot: { mod: SlotBucket; index: number }): string =>
   slot.mod === null ? `${NO_SLOT_NAME} ${slot.index}` : slotLabel(slot);
+
+/** Runs of control characters (Cc: NUL, tab, CR, LF, ESC, …) and line or paragraph separators. */
+const CONTROL_RUNS = /[\p{Cc}\u2028\u2029]+/gu;
+/** Bidi formatting: the Arabic letter mark, LRM and RLM, the embeddings and overrides, the isolates. */
+const BIDI_CONTROLS = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/gu;
+
+/**
+ * @function displayPoolName
+ * @param name {string} a pool name, which keys carry as typed (so treat it as untrusted)
+ * @returns {string} the name with each run of control characters and line breaks turned into one
+ *          space and bidi controls (such as U+202E) removed, then trimmed. May be "" (a name of
+ *          only controls): pick your own fallback. Escape it for HTML, file names and headers as
+ *          usual.
+ */
+export const displayPoolName = (name: string): string =>
+  name.replace(CONTROL_RUNS, " ").replace(BIDI_CONTROLS, "").trim();

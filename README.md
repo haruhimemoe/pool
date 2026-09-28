@@ -166,10 +166,6 @@ type StoredPool = z.infer<typeof storedPoolSchema>;
 | `moveBucket(pool, code, to)` | Moves any bucket, built-ins included, to 0-based position `to` in the new list. The slots follow the new order. |
 | `removeBucket(pool, code)` | Removes a custom slot that has no maps. |
 | `setBucketMods(pool, code, mods)` | Sets a custom slot's mods. `{ kind: "none" }` clears them. A forced set must pass `modSetProblem`, canonical order included (`toggleMod` keeps that order). |
-| `slotLabel(slot)` | `"NM1"`, `"Speed2"`, `"RC1 2"` (a space when the code ends in a digit), or `"4"` for a map with no slot. |
-| `slotTitle(slot)` | Like `slotLabel`, but `"No slot 4"` for a map with no slot. Made for accessible names. |
-| `bucketName(entry)` | `"Hidden"` for a built-in, the code for a custom slot, `"No slot"` for `null`. |
-| `bucketOptionLabel(entry)` | `"HD · Hidden"` for a built-in, the code for a custom slot. |
 
 The edits return the same pool when they refuse:
 
@@ -179,6 +175,18 @@ The edits return the same pool when they refuse:
 - `moveBucket`: an unknown code, a position out of range, or the position it's already in.
 - `removeBucket`: a built-in, an unknown code, or a bucket with maps.
 - `setBucketMods`: a built-in, an unknown code, or a forced set that isn't valid.
+
+### Labels
+
+| Export | What it does |
+| --- | --- |
+| `slotLabel(slot)` | `"NM1"`, `"Speed2"`, `"RC1 2"` (a space when the code ends in a digit), or `"4"` for a map with no slot. |
+| `slotTitle(slot)` | Like `slotLabel`, but `"No slot 4"` for a map with no slot. Made for accessible names. |
+| `bucketName(entry)` | `"Hidden"` for a built-in, the code for a custom slot, `"No slot"` for `null`. |
+| `bucketOptionLabel(entry)` | `"HD · Hidden"` for a built-in, the code for a custom slot. |
+| `displayPoolName(name)` | The name to show or store: each run of control characters and line breaks becomes one space, bidi controls (such as U+202E) are removed, and the ends are trimmed. May be `""`, so pick a fallback. |
+
+Keys carry a pool's name as typed, so treat it as untrusted text. `poolSchema` refuses only lone surrogates, and keys are forever, so a name can hold NUL, CR/LF, ESC or a right-to-left override. Pass it through `displayPoolName` before a database, a list, a file name or a header, and escape it for HTML as usual.
 
 ### Slots
 
@@ -252,6 +260,7 @@ The same pool always gives the same key. Decoding a key an encoder wrote and enc
 
 - Every edit returns a new object, or the same object when it refuses. Nothing is changed in place.
 - The bucket edits build a new `{ name, slots, buckets }`, so fields outside `Pool` (from a `poolFields.extend()` schema) don't carry through them. The slot edits copy the pool and keep them.
+- Pool names are untrusted display text: see [Labels](#labels).
 - The edits don't check beatmap IDs or names. Validate IDs as they come in (`parseBeatmapRef`, `beatmapIdSchema`), and run `poolSchema` or `poolDraftSchema` before you save.
 - The shared tables (`DEFAULT_BUCKETS`, `NO_MODS`, `PALETTE`, `MOD_BUCKETS`, `MOD_ACRONYMS`, `RULESETS`, `PACK_KEY_VERSIONS`, `MOD_BUCKET_NAMES` and the `*_MESSAGES` records) are frozen, and so are the sets `freemodSets` and `modSetsFor` return. `bucketsOf` and `slotModsFor` return read-only types, so one app module can't change them for another.
 - Custom codes and names are checked with the runtime's Unicode tables. A code that uses a character newer than the runtime knows passes on a current engine and fails on an older one. See "Unicode versions" in [docs/pack-key.md](docs/pack-key.md).
