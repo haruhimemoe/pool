@@ -17,10 +17,10 @@ Read [AGENTS.md](./AGENTS.md) first, especially "Keys are forever".
 3. Run the full check before opening a PR:
 
    ```sh
-   bun run check && bun run typecheck && bun run test && bun run test:dist
+   bun run check && bun run typecheck && bun run test:coverage && bun run test:dist
    ```
 
-   `bun run check:fix` applies Biome's formatting and import order. CI also runs `bun run test:coverage` (at least 95% of `src/` lines, branches, functions and statements) and `bun run check:consumer <zod version>` with zod 4.0.16 and the newest zod. That one typechecks the packed package in a fresh project and needs the npm registry.
+   `test:coverage` is `test` with the coverage floor CI enforces: at least 95% of `src/` lines, branches, functions and statements. `bun run check:fix` applies Biome's formatting and import order. CI also runs `bun run check:consumer <zod version>` with zod 4.0.16 and the newest zod. That one typechecks the packed package in a fresh project and needs the npm registry.
 
 4. Add a line to `CHANGELOG.md` under `## [Unreleased]`, in the right [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) section (Added, Changed, Deprecated, Removed, Fixed, Security).
 

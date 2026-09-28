@@ -7,7 +7,7 @@
  *       now uses this package, so a rerun would compare the package with itself.
  * @author David @dvhsh (https://dvh.sh)
  * @created Wed Sep 23, 2026
- * @modified Wed Sep 23, 2026
+ * @modified Thu Sep 24, 2026
  */
 
 import { execFileSync } from "node:child_process";

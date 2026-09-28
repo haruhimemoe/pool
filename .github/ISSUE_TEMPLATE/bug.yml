@@ -1,0 +1,32 @@
+name: Bug report
+description: A key won't open, a pool validates or edits wrong, or pasted text reads wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The smallest code that shows it, with the pool, pasted text or pack key you used.
+      render: ts
+    validations:
+      required: true
+  - type: input
+    id: error
+    attributes:
+      label: Error code (if any)
+      description: A PackKeyError code, a parsePoolText error code, or zod's message.
+      placeholder: checksum
+  - type: input
+    id: versions
+    attributes:
+      label: Versions and runtime
+      placeholder: "@haruhimemoe/pool 0.2.0, zod 4.6.5, Node 24 (or Chrome 140)"
+    validations:
+      required: true
