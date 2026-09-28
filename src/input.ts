@@ -8,6 +8,7 @@
  */
 
 import {
+  BUCKET_CODE_MESSAGES,
   bucketsOf,
   checkBucketCode,
   insertBeforeTb,
@@ -90,8 +91,9 @@ export const POOL_LINE_HELP =
 /**
  * Why a line was skipped: `set-only` (a beatmapset link, not a difficulty), `unrecognized` (not a
  * slot line or an ID), `bad-index` (slot 0), `bad-beatmap` (the slot's map isn't an ID or link),
- * `full` (no room for another custom slot), `duplicate` (the same slot twice), `full-group` (a
- * no-slot map would be numbered past 99; the IDs before it on the line are kept). `reason` is
+ * `full` (no room for another custom slot), `clash` (a new custom slot's code would be another
+ * slot's code plus a number, like NM1 next to NM), `duplicate` (the same slot twice), `full-group`
+ * (a no-slot map would be numbered past 99; the IDs before it on the line are kept). `reason` is
  * English text; show your own wording by `code` if you prefer.
  */
 export type SlotLineErrorCode =
@@ -100,6 +102,7 @@ export type SlotLineErrorCode =
   | "bad-index"
   | "bad-beatmap"
   | "full"
+  | "clash"
   | "duplicate"
   | "full-group";
 
@@ -221,6 +224,10 @@ export const parsePoolText = (
       const problem = checkBucketCode(list, parts.code);
       if (problem === "full") {
         fail("full", `This pool already has ${MAX_CUSTOM_BUCKETS} custom slots.`);
+        return;
+      }
+      if (problem === "clash") {
+        fail("clash", BUCKET_CODE_MESSAGES.clash);
         return;
       }
       if (problem !== null) {

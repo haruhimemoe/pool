@@ -15,8 +15,10 @@ import {
   removeBucket,
   renameBucket,
   setBucketMods,
+  withBuckets,
 } from "../src/bucket-edits.js";
 import { bucketsOf, findBucket, insertBeforeTb } from "../src/buckets.js";
+import { decodePackKey, encodePackKey } from "../src/key.js";
 import { NO_MODS } from "../src/mods.js";
 import type { Pool } from "../src/schema.js";
 
@@ -83,6 +85,42 @@ describe("bucket edits", () => {
     expect(moveBucket(ez, "EZ", -1)).toBe(ez);
     expect(moveBucket(ez, "EZ", 5)).toBe(ez);
     expect(moveBucket(ez, "HT", 0)).toBe(ez);
+  });
+
+  it("keeps slots in pool order when a bucket moves", () => {
+    const pool: Pool = {
+      name: "p",
+      slots: [
+        { mod: "NM", index: 1, beatmapId: 1 },
+        { mod: "HD", index: 1, beatmapId: 2 },
+      ],
+    };
+    const moved = moveBucket(pool, "HD", 0);
+    expect(moved.slots.map((s) => s.mod)).toEqual(["HD", "NM"]);
+    expect(decodePackKey(encodePackKey(moved))).toEqual(moved);
+    const list = [...bucketsOf(pool)].reverse();
+    expect(withBuckets(pool, list).slots.map((s) => s.mod)).toEqual(["HD", "NM"]);
+  });
+
+  it("keeps a renamed bucket's slots where they were", () => {
+    const pool: Pool = {
+      name: "p",
+      slots: [
+        { mod: "RC", index: 1, beatmapId: 1 },
+        { mod: "TB", index: 1, beatmapId: 2 },
+      ],
+      buckets: [...bucketsOf(base).slice(0, 5), { code: "RC", color: 0 }, { code: "TB" }],
+    };
+    const renamed = renameBucket(pool, "RC", "Rice");
+    expect(renamed.slots).toEqual([
+      { mod: "Rice", index: 1, beatmapId: 1 },
+      { mod: "TB", index: 1, beatmapId: 2 },
+    ]);
+  });
+
+  it("refuses a code that is another slot's code plus a number", () => {
+    expect(addBucket(base, "NM1", 0)).toBe(base);
+    expect(renameBucket(ez, "EZ", "HD2")).toBe(ez);
   });
 
   it("dropping the list back to default order removes it", () => {

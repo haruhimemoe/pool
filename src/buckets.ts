@@ -8,6 +8,7 @@
  * @modified Mon Sep 28, 2026
  */
 
+import { codeEndsInDigit } from "./codes.js";
 import {
   BUCKET_CODE_PATTERN,
   isModBucket,
@@ -78,16 +79,31 @@ export const matchBucketCode = (list: readonly BucketEntry[], text: string): str
   return list.find((entry) => entry.code.toUpperCase() === folded)?.code ?? null;
 };
 
+/** Default English text for each reason checkBucketCode refuses a code. */
 export const BUCKET_CODE_MESSAGES = Object.freeze({
   empty: "Type a code for the slot.",
   long: `Slot codes are at most ${MAX_BUCKET_CODE_LENGTH} characters.`,
   chars: "Use letters and digits only.",
   builtIn: "That's a built-in slot.",
   taken: "This pool already has a slot with that code.",
+  clash: "A code can't be another slot's code plus a number, like NM1 next to NM.",
   full: `A pool can have at most ${MAX_CUSTOM_BUCKETS} custom slots.`,
 } as const);
 
+/** Why checkBucketCode refuses a code. */
 export type BucketCodeError = keyof typeof BUCKET_CODE_MESSAGES;
+
+/**
+ * True when one code is the other plus ASCII digits and the shorter one ends in a letter ("NM"
+ * and "NM1", in any case): slotLabel prints NM slot 1 as "NM1", which reads back as NM1's slot 1.
+ * A code that ends in a digit gets a space in its labels ("RC1 2"), so RC1 and RC12 never clash.
+ */
+const clashes = (a: string, b: string): boolean => {
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  return (
+    !codeEndsInDigit(short) && long.startsWith(short) && /^\d+$/.test(long.slice(short.length))
+  );
+};
 
 /**
  * @function checkBucketCode
@@ -106,9 +122,9 @@ export const checkBucketCode = (
   if (!BUCKET_CODE_PATTERN.test(code)) return "chars";
   const folded = code.toUpperCase();
   if (isModBucket(folded)) return "builtIn";
-  if (list.some((entry) => entry.code !== renaming && entry.code.toUpperCase() === folded)) {
-    return "taken";
-  }
+  const others = list.filter((entry) => entry.code !== renaming).map((e) => e.code.toUpperCase());
+  if (others.includes(folded)) return "taken";
+  if (others.some((other) => clashes(other, folded))) return "clash";
   if (renaming === undefined && list.filter(isCustomBucket).length >= MAX_CUSTOM_BUCKETS) {
     return "full";
   }

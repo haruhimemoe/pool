@@ -80,6 +80,34 @@ describe("checkBucketCode", () => {
     expect(checkBucketCode(list, "Ez", { renaming: "EZ" })).toBeNull();
     expect(checkBucketCode(list, "NM", { renaming: "EZ" })).toBe("builtIn");
   });
+
+  // slotLabel prints NM slot 1 as "NM1", which would read back as a custom NM1's slot 1.
+  it.each(["NM1", "nm12", "HD2", "TB1", "EZ3", "ez07"])(
+    "refuses %j: another slot's code plus a number",
+    (code) => {
+      expect(checkBucketCode(list, code)).toBe("clash");
+    },
+  );
+
+  it("refuses a code that another slot's code is plus a number, in either case", () => {
+    const rc1 = [...DEFAULT_BUCKETS, { code: "RC1", color: 0 }];
+    expect(checkBucketCode(rc1, "RC")).toBe("clash");
+    expect(checkBucketCode(rc1, "rc")).toBe("clash");
+  });
+
+  it("allows codes whose labels can't be confused", () => {
+    const rc1 = [...DEFAULT_BUCKETS, { code: "RC1", color: 0 }];
+    // A code that ends in a digit is labelled with a space: "RC1 2" and "RC12 1".
+    expect(checkBucketCode(rc1, "RC12")).toBeNull();
+    expect(checkBucketCode(list, "NMA")).toBeNull();
+    expect(checkBucketCode(list, "NM１")).toBeNull();
+    expect(checkBucketCode(list, "HDHR")).toBeNull();
+  });
+
+  it("leaves the code being renamed out of the clash check", () => {
+    const rc1 = [...DEFAULT_BUCKETS, { code: "RC1", color: 0 }];
+    expect(checkBucketCode(rc1, "RC", { renaming: "RC1" })).toBeNull();
+  });
 });
 
 describe("colors", () => {

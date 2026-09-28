@@ -152,18 +152,18 @@ type StoredPool = z.infer<typeof storedPoolSchema>;
 | `bucketsOf(pool)` | The pool's bucket list, or `DEFAULT_BUCKETS`. Read-only: edit through the functions below. |
 | `isCustomBucket(entry)` | `true` for a custom slot (it has a `color`). |
 | `canonicalBuckets(list)` | A copy of the list, or `undefined` when it equals the default. |
-| `withBuckets(pool, list)` | `{ name, slots, buckets }` with the canonical list (no `buckets` field for the default). |
+| `withBuckets(pool, list)` | `{ name, slots, buckets }` with the slots in the new list's pool order and the canonical list (no `buckets` field for the default). The `slots` array is the same one when its order holds. |
 | `findBucket(list, code)` | The entry with exactly that code, or `undefined`. |
 | `matchBucketCode(list, text)` | The stored code `text` matches, ignoring case, or `null`. |
 | `insertBeforeTb(list, entry)` | A new list with `entry` just before TB (last when there's no TB). |
 | `nextFreeColor(list)` | The lowest palette id no custom slot uses, or `0` when all are taken. |
-| `checkBucketCode(list, code, { renaming? })` | Why `code` can't be a custom slot's code (`empty`, `long`, `chars`, `builtIn`, `taken`, `full`), or `null`. Trim the code first. When renaming, pass the current code as `renaming`, so a slot can keep its own code in another case. |
+| `checkBucketCode(list, code, { renaming? })` | Why `code` can't be a custom slot's code (`empty`, `long`, `chars`, `builtIn`, `taken`, `clash`, `full`), or `null`. `clash` is another slot's code plus a number, like `NM1` next to `NM` (or `RC` next to `RC1`): `slotLabel` would print NM slot 1 as `NM1`, which reads back as NM1's slot 1. Trim the code first. When renaming, pass the current code as `renaming`, so a slot can keep its own code in another case. |
 | `BUCKET_CODE_MESSAGES` | Default wording for each. |
 | `addBucket(pool, code, color)` | Adds a custom slot just before TB. |
 | `addBuckets(pool, entries)` | `addBucket` for each entry in order, skipping the ones it refuses. It reads only `code` and `color`: set mods afterwards with `setBucketMods`. |
 | `renameBucket(pool, code, next)` | Renames a custom slot and moves its maps with it. |
 | `recolorBucket(pool, code, color)` | Changes a custom slot's color. |
-| `moveBucket(pool, code, to)` | Moves any bucket, built-ins included, to 0-based position `to` in the new list. |
+| `moveBucket(pool, code, to)` | Moves any bucket, built-ins included, to 0-based position `to` in the new list. The slots follow the new order. |
 | `removeBucket(pool, code)` | Removes a custom slot that has no maps. |
 | `setBucketMods(pool, code, mods)` | Sets a custom slot's mods. `{ kind: "none" }` clears them. A forced set must pass `modSetProblem`, canonical order included (`toggleMod` keeps that order). |
 | `slotLabel(slot)` | `"NM1"`, `"Speed2"`, `"RC1 2"` (a space when the code ends in a digit), or `"4"` for a map with no slot. |
@@ -218,6 +218,7 @@ Each error is `{ line, text, code, reason }`: a 1-based line number, the trimmed
 | `bad-index` | Has slot number 0. |
 | `bad-beatmap` | Has something other than an ID or difficulty link after the slot. |
 | `full` | Needs a new custom slot, and the pool already has 8. |
+| `clash` | Needs a new custom slot whose code is another slot's code plus a number (`NM1 2 555` in a pool with NM). |
 | `duplicate` | Repeats a slot from earlier in the paste. |
 | `full-group` | Would number a map with no slot past 99. The IDs before it on the line are kept. |
 

@@ -6,10 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- `checkBucketCode` refuses a code that is another slot's code plus a number (`NM1` next to `NM`, `RC` next to `RC1`) with the new `clash` error, so `addBucket` and `renameBucket` refuse it too. With both codes, `slotLabel` prints NM slot 1 as `NM1`, which `parsePoolText` reads as NM1's slot 1. Pools that already have such codes still validate and open.
+- `parsePoolText` reports a line that would create such a code with the new `clash` error code.
+
 ### Fixed
 
 - `parsePoolText` splits lines on a lone CR, U+2028 and U+2029 too. Before, every line after the first was lost without an error.
 - `parsePoolText` reads a slot line whose beatmap is followed by a comma (`NM1 129891, Freedom Dive`), as ID lines already did.
+- `moveBucket` (and `withBuckets`) put the slots in the new pool order. Before, they kept the old order, unlike every other edit and `decodePackKey`.
 
 ## [0.1.0] - 2026-09-23
 

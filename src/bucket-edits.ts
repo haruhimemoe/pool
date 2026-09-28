@@ -18,19 +18,21 @@ import {
 } from "./buckets.js";
 import { PALETTE_SIZE } from "./constants.js";
 import { modSetProblem, type SlotMods } from "./mods.js";
+import { sortSlots } from "./pool.js";
 import type { BucketEntry, CustomBucket, Pool } from "./schema.js";
 
 /**
  * @function withBuckets
  * @param pool {Pool} a pool
  * @param list {readonly BucketEntry[]} its new bucket list
- * @returns {Pool} name + slots + the canonical list (field omitted for the default)
+ * @returns {Pool} name + slots in the list's pool order (the same array when the order holds) +
+ *          the canonical list (field omitted for the default)
  */
 export const withBuckets = (pool: Pool, list: readonly BucketEntry[]): Pool => {
+  const sorted = sortSlots(pool.slots, list);
+  const slots = sorted.every((slot, i) => slot === pool.slots[i]) ? pool.slots : sorted;
   const buckets = canonicalBuckets(list);
-  return buckets
-    ? { name: pool.name, slots: pool.slots, buckets }
-    : { name: pool.name, slots: pool.slots };
+  return buckets ? { name: pool.name, slots, buckets } : { name: pool.name, slots };
 };
 
 const isColor = (color: number): boolean =>
@@ -76,12 +78,12 @@ export const renameBucket = (pool: Pool, code: string, next: string): Pool => {
   ) {
     return pool;
   }
-  const renamed = withBuckets(
-    pool,
+  const slots = pool.slots.map((s) => (s.mod === code ? { ...s, mod: next } : s));
+  return withBuckets(
+    { ...pool, slots },
     // Spread the entry so its color and mods come along.
     list.map((e) => (e.code === code ? { ...entry, code: next } : e)),
   );
-  return { ...renamed, slots: pool.slots.map((s) => (s.mod === code ? { ...s, mod: next } : s)) };
 };
 
 /**

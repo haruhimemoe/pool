@@ -150,6 +150,16 @@ describe("parsePoolText", () => {
     expect(errors[0]?.reason).toBe("This pool already has 8 custom slots.");
   });
 
+  it("won't create a custom slot whose code is another slot's code plus a number", () => {
+    const { slots, errors, newBuckets } = parsePoolText("NM1 2 555\nRC 5\nRC1 2 6", EMPTY);
+    expect(newBuckets).toEqual([{ code: "RC", color: 0 }]);
+    expect(slots).toEqual([{ mod: "RC", index: 1, beatmapId: 5 }]);
+    expect(errors).toMatchObject([
+      { line: 1, code: "clash" },
+      { line: 3, code: "clash" },
+    ]);
+  });
+
   it("reports bad lines by line number, keeps the good ones, and creates no bucket for a bad line", () => {
     const { slots, errors, newBuckets } = parsePoolText(
       "NM1 129891\nnonsense\nEZ1 abc\nHD1 https://osu.ppy.sh/s/39804\nNM1 2116202\nNM0 5\nhttps://osu.ppy.sh/s/39804",
