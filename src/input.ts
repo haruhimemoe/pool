@@ -33,10 +33,12 @@ import {
   slotKey,
 } from "./schema.js";
 
+/** What parseBeatmapRef read: a beatmap id, or why it couldn't. */
 export type BeatmapRefResult =
   | { ok: true; beatmapId: number }
   | { ok: false; reason: "set-only" | "unrecognized" };
 
+/** Default English text for each reason parseBeatmapRef can't read a token. */
 export const BEATMAP_REF_MESSAGES: Readonly<Record<"set-only" | "unrecognized", string>> =
   Object.freeze({
     "set-only":
@@ -85,6 +87,7 @@ const AFTER_CODE = new RegExp(`^${SLOT_REST}`, "u");
 /** Same, for a code we haven't seen: 1-12 letters/digits, shortest first so "EZ1" is EZ + 1. */
 const SLOT_LINE = new RegExp(`^(${CODE}?)${SLOT_REST}`, "u");
 
+/** The reason text of an `unrecognized` pasted line. */
 export const POOL_LINE_HELP =
   "Start the line with a slot like NM1 or EZ2, or paste only beatmap IDs or links.";
 
@@ -106,11 +109,12 @@ export type SlotLineErrorCode =
   | "duplicate"
   | "full-group";
 
+/** A skipped pasted line: its 1-based number, trimmed text, code and English reason. */
 export type SlotLineError = { line: number; text: string; code: SlotLineErrorCode; reason: string };
 
 type LineParts = { code: string; index: string | undefined; ref: string };
 
-/** "<code> <n> <id or link>" with a space before the slot number: the whole first token is the code. */
+/** "<code> <n> <id or link>", a space before the slot number: the whole first token is the code. */
 const SPACED_LINE = new RegExp(`^(${CODE})\\s+(\\d{1,2})\\s*[:.-]?\\s+${REF}`, "u");
 
 /**

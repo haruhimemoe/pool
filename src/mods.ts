@@ -13,12 +13,18 @@
 import type { ModBucket } from "./constants.js";
 import type { BucketEntry } from "./schema.js";
 
+/** The mods a custom slot can force, in canonical order. The index is the pk3 bit: append only. */
 export const MOD_ACRONYMS = Object.freeze(["EZ", "HD", "HR", "DT", "HT", "FL"] as const);
 
-/** osu!'s four rulesets, as the osu! API names them. */
+/**
+ * osu!'s four rulesets, as the osu! API names them. Mirrors RULESETS in @haruhimemoe/osu, which
+ * this package doesn't depend on: keep the two equal.
+ */
 export const RULESETS = Object.freeze(["osu", "taiko", "fruits", "mania"] as const);
+/** One of RULESETS. */
 export type Ruleset = (typeof RULESETS)[number];
 
+/** One of MOD_ACRONYMS. */
 export type ModAcronym = (typeof MOD_ACRONYMS)[number];
 
 /**
@@ -30,8 +36,10 @@ export type SlotMods =
   | { readonly kind: "forced"; readonly set: readonly ModAcronym[] }
   | { readonly kind: "free" };
 
+/** The shared "no mods" value (NM, and custom slots without mods). */
 export const NO_MODS: SlotMods = Object.freeze({ kind: "none" });
 
+/** Mods one custom slot may force. */
 export const MAX_FORCED_MODS = 3;
 
 /** Pairs osu! won't combine. NC plays like DT, so it isn't offered at all. */
@@ -40,6 +48,7 @@ const CONFLICTS: readonly (readonly [ModAcronym, ModAcronym])[] = [
   ["DT", "HT"],
 ];
 
+/** Default English text for each reason modSetProblem refuses a forced set. */
 export const MOD_SET_MESSAGES = Object.freeze({
   empty: "Pick at least one mod.",
   unknown: "Mods are EZ, HD, HR, DT, HT and FL.",
@@ -49,6 +58,7 @@ export const MOD_SET_MESSAGES = Object.freeze({
   order: "List mods in the order EZ, HD, HR, DT, HT, FL.",
 } as const);
 
+/** Why modSetProblem refuses a forced set. */
 export type ModSetProblem = keyof typeof MOD_SET_MESSAGES;
 
 /**

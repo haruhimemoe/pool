@@ -13,14 +13,14 @@
 - **Public API is pinned** by `tests/exports.test.ts`, and the README's API section lists every export. Adding, removing or renaming an export is a semver decision: update the test, the README and `CHANGELOG.md` together.
 - **Test first.** fast-check property tests cover base64url, CRC-16, varints and the codec; add a property when a new invariant appears. Tests never touch the network.
 - **Changelog.** Keep a Changelog 1.1.0. User-visible changes get a line under `## [Unreleased]`. Never rewrite a released entry.
-- **Code style.** Biome (2 spaces, double quotes, trailing commas, 100 columns). Every file starts with the `@file / @desc / @author / @created / @modified` header. Exported functions get JSDoc with `@function`, `@param`, `@returns` (and `@throws` when they throw). Imports in `src/` use `.js` extensions. Plain, short sentences in docs and messages, no em dashes.
+- **Code style.** Biome (2 spaces, double quotes, trailing commas, 100 columns). Every file starts with the `@file / @desc / @author / @created / @modified` header. Exported functions get JSDoc with `@function`, `@param`, `@returns` (and `@throws` when they throw); every other export (a schema, constant, type or class) gets a one-line `/** */`. Imports in `src/` use `.js` extensions. Plain, short sentences in docs and messages, no em dashes.
 
 ## Layout
 
 - `src/index.ts`: re-exports every module below. The package has one entry point.
 - `src/schema.ts`: zod schemas and the `Pool`, `PoolSlot` and bucket types; `checkPoolBuckets`.
 - `src/constants.ts`: limits, built-in buckets, the custom slot code pattern, `PALETTE`.
-- `src/mods.ts`: mod acronyms, forced set rules, the pk3 bitmask, `slotModsFor`, star rating mod sets. Imports only types from `schema.ts` (which imports it).
+- `src/mods.ts`: mod acronyms, forced set rules, the pk3 bitmask, `slotModsFor`, star rating mod sets. Imports only types from `schema.ts` (which imports it). `RULESETS` mirrors `RULESETS` in `@haruhimemoe/osu` (not a dependency): keep the two equal.
 - `src/buckets.ts`: bucket list helpers, the canonical list, and custom code checks.
 - `src/bucket-edits.ts`: the bucket edits (`addBucket`, `renameBucket`, `moveBucket`, `setBucketMods`, …).
 - `src/labels.ts`: bucket names and slot labels.

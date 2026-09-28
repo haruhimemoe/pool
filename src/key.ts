@@ -7,7 +7,7 @@
  *       before. Metadata is never in a key. docs/pack-key.md documents every version.
  * @author David @dvhsh (https://dvh.sh)
  * @created Tue Sep 22, 2026
- * @modified Wed Sep 23, 2026
+ * @modified Mon Sep 28, 2026
  */
 
 import { base64UrlToBytes, bytesToBase64Url } from "./base64url.js";
@@ -28,6 +28,7 @@ import { decodeVarint, encodeVarint } from "./varint.js";
 /** Every key version this build reads. Append only; the pack-key guide documents each one. */
 export const PACK_KEY_VERSIONS = Object.freeze([1, 2, 3] as const);
 
+/** One of PACK_KEY_VERSIONS. */
 export type PackKeyVersion = (typeof PACK_KEY_VERSIONS)[number];
 
 const KEY_PATTERN = /^pk(\d+)\.(.*)$/s;
@@ -42,6 +43,7 @@ const MODS_FREE = 2;
 /** Slot bucket byte meaning "no slot". */
 const NO_SLOT = 0xff;
 
+/** Why decodePackKey refused a key (see docs/pack-key.md, "Decoder rules"). */
 export type PackKeyErrorCode =
   | "empty"
   | "prefix"
@@ -50,6 +52,7 @@ export type PackKeyErrorCode =
   | "checksum"
   | "malformed";
 
+/** Default English text for each PackKeyErrorCode. */
 export const PACK_KEY_ERROR_MESSAGES: Readonly<Record<PackKeyErrorCode, string>> = Object.freeze({
   empty: "Paste a pack key first.",
   prefix: "That doesn't look like a pack key. Keys start with pk1., pk2. or pk3.",
@@ -60,7 +63,12 @@ export const PACK_KEY_ERROR_MESSAGES: Readonly<Record<PackKeyErrorCode, string>>
   malformed: "This key is damaged or incomplete. Copy it again from where you got it.",
 });
 
+/**
+ * What decodePackKey throws: an Error named "PackKeyError" with a `code` and that code's default
+ * text as `message`.
+ */
 export class PackKeyError extends Error {
+  /** Why the key was refused. */
   readonly code: PackKeyErrorCode;
 
   constructor(code: PackKeyErrorCode) {
@@ -106,7 +114,7 @@ const pushTableEntry = (entry: BucketEntry, out: number[]) => {
  * @function encodePackKey
  * @param pool {Pool} pool identity
  * @returns {string} "pk1.", "pk2." or "pk3." + base64url(body + CRC-16)
- * @throws {ZodError} when the pool fails poolSchema (empty name, bad slot, bad bucket list, bad mods)
+ * @throws {ZodError} when the pool fails poolSchema (empty name, bad slot, bucket list or mods)
  */
 export const encodePackKey = (pool: Pool): string => {
   const parsed = poolSchema.parse(pool);

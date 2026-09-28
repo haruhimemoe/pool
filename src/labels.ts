@@ -34,7 +34,8 @@ export const bucketOptionLabel = (entry: BucketEntry): string =>
 /**
  * @function slotLabel
  * @param slot {{ mod: SlotBucket; index: number }} a slot
- * @returns {string} "NM1", "Speed2", "RC1 2" (space when the code ends in a digit), or "4" for no slot
+ * @returns {string} "NM1", "Speed2", "RC1 2" (a space when the code ends in a digit), or "4" for
+ *          no slot
  */
 export const slotLabel = (slot: { mod: SlotBucket; index: number }): string => {
   if (slot.mod === null) return String(slot.index);
@@ -51,7 +52,7 @@ export const slotTitle = (slot: { mod: SlotBucket; index: number }): string =>
 
 /** Runs of control characters (Cc: NUL, tab, CR, LF, ESC, …) and line or paragraph separators. */
 const CONTROL_RUNS = /[\p{Cc}\u2028\u2029]+/gu;
-/** Bidi formatting: the Arabic letter mark, LRM and RLM, the embeddings and overrides, the isolates. */
+/** Bidi formatting: the Arabic letter mark, LRM, RLM, the embeddings, overrides and isolates. */
 const BIDI_CONTROLS = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/gu;
 
 /**

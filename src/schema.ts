@@ -24,14 +24,18 @@ import {
 } from "./constants.js";
 import { MAX_FORCED_MODS, MOD_ACRONYMS, MOD_SET_MESSAGES, modSetProblem } from "./mods.js";
 
+/** A beatmap (difficulty) id: an integer from 1 to 2147483647. */
 export const beatmapIdSchema = z.number().int().min(1).max(2_147_483_647);
+/** A bucket code as stored: BUCKET_CODE_PATTERN (letters and digits, 1 to 12). */
 export const bucketCodeSchema = z.string().regex(BUCKET_CODE_PATTERN);
+/** A custom bucket color: an index into PALETTE. */
 export const paletteColorSchema = z
   .number()
   .int()
   .min(0)
   .max(PALETTE_SIZE - 1);
 
+/** One of MOD_ACRONYMS. */
 export const modAcronymSchema = z.enum(MOD_ACRONYMS);
 
 /**
@@ -54,28 +58,37 @@ export const storedSlotModsSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("free") }),
 ]);
 
+/** A custom slot's mods as stored (storedSlotModsSchema). */
 export type StoredSlotMods = z.infer<typeof storedSlotModsSchema>;
 
+/** A built-in bucket in a list: `{ code }`, nothing else. */
 export const builtInBucketSchema = z.strictObject({ code: z.enum(MOD_BUCKETS) });
+/** A custom bucket in a list: `{ code, color, mods? }`, nothing else. */
 export const customBucketSchema = z.strictObject({
   code: bucketCodeSchema,
   color: paletteColorSchema,
   mods: storedSlotModsSchema.optional(),
 });
+/** One entry of a pool's bucket list, built-in or custom. */
 export const bucketEntrySchema = z.union([builtInBucketSchema, customBucketSchema]);
 
+/** A built-in bucket entry. */
 export type BuiltInBucket = { code: ModBucket };
+/** A custom bucket entry: code, palette color, and optional mods. */
 export type CustomBucket = z.infer<typeof customBucketSchema>;
+/** One entry of a pool's bucket list. */
 export type BucketEntry = BuiltInBucket | CustomBucket;
 /** A bucket code, or null for "no slot". */
 export type SlotBucket = string | null;
 
+/** One map in a pool: `mod` (a bucket code, or null for no slot), `index` (1 to 99), beatmapId. */
 export const poolSlotSchema = z.object({
   mod: bucketCodeSchema.nullable(),
   index: z.number().int().min(1).max(MAX_SLOT_INDEX),
   beatmapId: beatmapIdSchema,
 });
 
+/** One map in a pool (poolSlotSchema). */
 export type PoolSlot = z.infer<typeof poolSlotSchema>;
 
 /**
@@ -145,7 +158,10 @@ const LONE_SURROGATE = /\p{Cs}/u;
 const wellFormed = (name: string): boolean => !LONE_SURROGATE.test(name);
 const WELL_FORMED = { message: "the name has a broken character" };
 
-/** The unrefined pool object, for `.extend()` (e.g. a stored pool with more fields); refine the result yourself. */
+/**
+ * The unrefined pool object, for `.extend()` (e.g. a stored pool with more fields); refine the
+ * result yourself with checkPoolBuckets.
+ */
 export const poolFields = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH).refine(wellFormed, WELL_FORMED),
   slots: slotsSchema,
@@ -160,4 +176,5 @@ export const poolDraftSchema = poolFields
   .extend({ name: z.string().max(MAX_NAME_LENGTH).refine(wellFormed, WELL_FORMED) })
   .superRefine(checkPoolBuckets);
 
+/** A pool: name, slots in any order, and the bucket list when it isn't the default. */
 export type Pool = z.infer<typeof poolSchema>;

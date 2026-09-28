@@ -108,6 +108,7 @@ export const moveSlot = (
   return withSlots(rest, [...rest.slots, { ...slot, mod: to, index }]);
 };
 
+/** What planMerge expects mergeSlots to add, replace and drop. */
 export type MergePlan = { added: PoolSlot[]; replaced: PoolSlot[]; dropped: PoolSlot[] };
 
 /**

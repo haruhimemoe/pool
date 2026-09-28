@@ -19,7 +19,10 @@ import {
 } from "./constants.js";
 import type { BucketEntry, CustomBucket } from "./schema.js";
 
-/** The six built-ins in default order. Frozen, entries included: every pool without a list shares it. */
+/**
+ * The six built-ins in default order. Frozen, entries included: every pool without a list shares
+ * it.
+ */
 export const DEFAULT_BUCKETS: readonly Readonly<BucketEntry>[] = Object.freeze(
   MOD_BUCKETS.map((code) => Object.freeze({ code })),
 );
@@ -63,7 +66,7 @@ export const canonicalBuckets = (list: readonly BucketEntry[]): BucketEntry[] | 
  * @function findBucket
  * @param list {readonly BucketEntry[]} bucket list
  * @param code {string} exact code
- * @returns {BucketEntry | undefined}
+ * @returns {BucketEntry | undefined} the entry with exactly that code, or undefined
  */
 export const findBucket = (list: readonly BucketEntry[], code: string): BucketEntry | undefined =>
   list.find((entry) => entry.code === code);
@@ -110,7 +113,8 @@ const clashes = (a: string, b: string): boolean => {
  * @function checkBucketCode
  * @param list {readonly BucketEntry[]} current bucket list
  * @param code {string} proposed custom code (already trimmed)
- * @param options {{ renaming?: string }} the code being renamed, which may keep its own spelling in another case
+ * @param options {{ renaming?: string }} the code being renamed, which may keep its own spelling in
+ *        another case
  * @returns {BucketCodeError | null} why the code can't be used, or null
  */
 export const checkBucketCode = (

@@ -123,7 +123,8 @@ export const moveBucket = (pool: Pool, code: string, to: number): Pool => {
  * @function removeBucket
  * @param pool {Pool} pool
  * @param code {string} custom bucket
- * @returns {Pool} pool without it, or the same pool for built-ins, unknown codes, or buckets with maps
+ * @returns {Pool} pool without it, or the same pool for built-ins, unknown codes, or buckets with
+ *          maps
  */
 export const removeBucket = (pool: Pool, code: string): Pool => {
   const list = bucketsOf(pool);
