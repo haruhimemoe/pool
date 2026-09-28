@@ -6,7 +6,7 @@
  *       well-formed names, extractPackKey boundaries).
  * @author David @dvhsh (https://dvh.sh)
  * @created Wed Sep 23, 2026
- * @modified Wed Sep 23, 2026
+ * @modified Mon Sep 28, 2026
  */
 
 import { describe, expect, it } from "vitest";
@@ -19,6 +19,7 @@ import {
   DEFAULT_BUCKETS,
   encodePackKey,
   extractPackKey,
+  freemodSets,
   MAX_CUSTOM_BUCKETS,
   MAX_SLOT_INDEX,
   MOD_ACRONYMS,
@@ -26,6 +27,7 @@ import {
   MOD_BUCKETS,
   MOD_SET_MESSAGES,
   mergeSlots,
+  modSetsFor,
   NO_MODS,
   PACK_KEY_ERROR_MESSAGES,
   PACK_KEY_VERSIONS,
@@ -200,6 +202,9 @@ describe("shared constants are frozen", () => {
     ["BEATMAP_REF_MESSAGES", BEATMAP_REF_MESSAGES],
     ["PACK_KEY_ERROR_MESSAGES", PACK_KEY_ERROR_MESSAGES],
     ["built-in slot mods", Object.freeze(DEFAULT_BUCKETS.map((entry) => slotModsFor(entry)))],
+    ["freemod sets", freemodSets("osu")],
+    ["mania freemod sets", freemodSets("mania")],
+    ["freemod sets through modSetsFor", modSetsFor({ kind: "free" }, "osu")],
   ])("%s", (_, value) => {
     expect(frozenDeep(value)).toBe(true);
   });

@@ -7,7 +7,7 @@
  *       schema.ts imports this module.
  * @author David @dvhsh (https://dvh.sh)
  * @created Wed Sep 23, 2026
- * @modified Wed Sep 23, 2026
+ * @modified Mon Sep 28, 2026
  */
 
 import type { ModBucket } from "./constants.js";
@@ -156,9 +156,13 @@ const BUILT_IN_MODS: Readonly<Record<ModBucket, SlotMods>> = Object.freeze({
 export const slotModsFor = (entry: BucketEntry): SlotMods =>
   "color" in entry ? (entry.mods ?? NO_MODS) : BUILT_IN_MODS[entry.code];
 
-const FREEMOD_SETS: readonly (readonly ModAcronym[])[] = [["HD"], ["HR"], ["HD", "HR"], ["EZ"]];
+/** Frozen at both levels: freemodSets and modSetsFor hand the same arrays to every caller. */
+const frozenSets = (sets: ModAcronym[][]): readonly (readonly ModAcronym[])[] =>
+  Object.freeze(sets.map((set) => Object.freeze(set)));
+
+const FREEMOD_SETS = frozenSets([["HD"], ["HR"], ["HD", "HR"], ["EZ"]]);
 /** EZ and HR hardly apply on mania, so the row shows HD only there. */
-const MANIA_FREEMOD_SETS: readonly (readonly ModAcronym[])[] = [["HD"]];
+const MANIA_FREEMOD_SETS = frozenSets([["HD"]]);
 
 /**
  * @function freemodSets

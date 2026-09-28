@@ -253,7 +253,7 @@ The same pool always gives the same key. Decoding a key an encoder wrote and enc
 - Every edit returns a new object, or the same object when it refuses. Nothing is changed in place.
 - The bucket edits build a new `{ name, slots, buckets }`, so fields outside `Pool` (from a `poolFields.extend()` schema) don't carry through them. The slot edits copy the pool and keep them.
 - The edits don't check beatmap IDs or names. Validate IDs as they come in (`parseBeatmapRef`, `beatmapIdSchema`), and run `poolSchema` or `poolDraftSchema` before you save.
-- The shared tables (`DEFAULT_BUCKETS`, `NO_MODS`, `PALETTE`, `MOD_BUCKETS`, `MOD_ACRONYMS`, `RULESETS`, `PACK_KEY_VERSIONS`, `MOD_BUCKET_NAMES` and the `*_MESSAGES` records) are frozen, and `bucketsOf` and `slotModsFor` return read-only types, so one app module can't change them for another.
+- The shared tables (`DEFAULT_BUCKETS`, `NO_MODS`, `PALETTE`, `MOD_BUCKETS`, `MOD_ACRONYMS`, `RULESETS`, `PACK_KEY_VERSIONS`, `MOD_BUCKET_NAMES` and the `*_MESSAGES` records) are frozen, and so are the sets `freemodSets` and `modSetsFor` return. `bucketsOf` and `slotModsFor` return read-only types, so one app module can't change them for another.
 - Custom codes and names are checked with the runtime's Unicode tables. A code that uses a character newer than the runtime knows passes on a current engine and fails on an older one. See "Unicode versions" in [docs/pack-key.md](docs/pack-key.md).
 
 ## Compatibility
