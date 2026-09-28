@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - `checkBucketCode` refuses a code that is another slot's code plus a number (`NM1` next to `NM`, `RC` next to `RC1`) with the new `clash` error, so `addBucket` and `renameBucket` refuse it too. With both codes, `slotLabel` prints NM slot 1 as `NM1`, which `parsePoolText` reads as NM1's slot 1. Pools that already have such codes still validate and open.
 - `parsePoolText` reports a line that would create such a code with the new `clash` error code.
+- `checkBucketCode` refuses a code with no letter (`12`) with the new `digits` error. `parsePoolText` already read such lines as beatmap IDs or a numbered list, so their labels didn't read back.
 
 ### Fixed
 

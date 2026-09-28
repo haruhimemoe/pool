@@ -104,6 +104,16 @@ describe("checkBucketCode", () => {
     expect(checkBucketCode(list, "HDHR")).toBeNull();
   });
 
+  // "12 1 555" would read as three no-slot maps, and "1. 129891" is a numbered list.
+  it.each(["1", "12", "２０２６"])("refuses %j: a code needs a letter", (code) => {
+    expect(checkBucketCode(list, code)).toBe("digits");
+  });
+
+  it("allows digits next to a letter", () => {
+    expect(checkBucketCode(list, "1M")).toBeNull();
+    expect(checkBucketCode(list, "W2")).toBeNull();
+  });
+
   it("leaves the code being renamed out of the clash check", () => {
     const rc1 = [...DEFAULT_BUCKETS, { code: "RC1", color: 0 }];
     expect(checkBucketCode(rc1, "RC", { renaming: "RC1" })).toBeNull();

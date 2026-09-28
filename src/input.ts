@@ -216,11 +216,7 @@ export const parsePoolText = (
 
     let mod = matchBucketCode(list, parts.code);
     if (mod === null) {
-      // "1. 129891" is a numbered list, not a slot called "1".
-      if (/^\p{N}+$/u.test(parts.code)) {
-        fail("unrecognized", POOL_LINE_HELP);
-        return;
-      }
+      // A code of digits only is refused as "unrecognized": "1. 129891" is a numbered list.
       const problem = checkBucketCode(list, parts.code);
       if (problem === "full") {
         fail("full", `This pool already has ${MAX_CUSTOM_BUCKETS} custom slots.`);

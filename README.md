@@ -157,7 +157,7 @@ type StoredPool = z.infer<typeof storedPoolSchema>;
 | `matchBucketCode(list, text)` | The stored code `text` matches, ignoring case, or `null`. |
 | `insertBeforeTb(list, entry)` | A new list with `entry` just before TB (last when there's no TB). |
 | `nextFreeColor(list)` | The lowest palette id no custom slot uses, or `0` when all are taken. |
-| `checkBucketCode(list, code, { renaming? })` | Why `code` can't be a custom slot's code (`empty`, `long`, `chars`, `builtIn`, `taken`, `clash`, `full`), or `null`. `clash` is another slot's code plus a number, like `NM1` next to `NM` (or `RC` next to `RC1`): `slotLabel` would print NM slot 1 as `NM1`, which reads back as NM1's slot 1. Trim the code first. When renaming, pass the current code as `renaming`, so a slot can keep its own code in another case. |
+| `checkBucketCode(list, code, { renaming? })` | Why `code` can't be a custom slot's code (`empty`, `long`, `chars`, `digits`, `builtIn`, `taken`, `clash`, `full`), or `null`. `digits` is a code with no letter, which pasted text would read as beatmap IDs or a numbered list. `clash` is another slot's code plus a number, like `NM1` next to `NM` (or `RC` next to `RC1`): `slotLabel` would print NM slot 1 as `NM1`, which reads back as NM1's slot 1. Trim the code first. When renaming, pass the current code as `renaming`, so a slot can keep its own code in another case. |
 | `BUCKET_CODE_MESSAGES` | Default wording for each. |
 | `addBucket(pool, code, color)` | Adds a custom slot just before TB. |
 | `addBuckets(pool, entries)` | `addBucket` for each entry in order, skipping the ones it refuses. It reads only `code` and `color`: set mods afterwards with `setBucketMods`. |
@@ -180,7 +180,7 @@ The edits return the same pool when they refuse:
 
 | Export | What it does |
 | --- | --- |
-| `slotLabel(slot)` | `"NM1"`, `"Speed2"`, `"RC1 2"` (a space when the code ends in a digit), or `"4"` for a map with no slot. |
+| `slotLabel(slot)` | `"NM1"`, `"Speed2"`, `"RC1 2"` (a space when the code ends in a digit), or `"4"` for a map with no slot. When every code passed `checkBucketCode`, `parsePoolText` reads a line `<label> <ID>` back as the same slot. |
 | `slotTitle(slot)` | Like `slotLabel`, but `"No slot 4"` for a map with no slot. Made for accessible names. |
 | `bucketName(entry)` | `"Hidden"` for a built-in, the code for a custom slot, `"No slot"` for `null`. |
 | `bucketOptionLabel(entry)` | `"HD · Hidden"` for a built-in, the code for a custom slot. |

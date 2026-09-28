@@ -84,6 +84,7 @@ export const BUCKET_CODE_MESSAGES = Object.freeze({
   empty: "Type a code for the slot.",
   long: `Slot codes are at most ${MAX_BUCKET_CODE_LENGTH} characters.`,
   chars: "Use letters and digits only.",
+  digits: "A code needs at least one letter.",
   builtIn: "That's a built-in slot.",
   taken: "This pool already has a slot with that code.",
   clash: "A code can't be another slot's code plus a number, like NM1 next to NM.",
@@ -120,6 +121,8 @@ export const checkBucketCode = (
   if (code === "") return "empty";
   if (Array.from(code).length > MAX_BUCKET_CODE_LENGTH) return "long";
   if (!BUCKET_CODE_PATTERN.test(code)) return "chars";
+  // "12 1 555" would read as three no-slot maps, and "1. 129891" is a numbered list.
+  if (/^\p{N}+$/u.test(code)) return "digits";
   const folded = code.toUpperCase();
   if (isModBucket(folded)) return "builtIn";
   const others = list.filter((entry) => entry.code !== renaming).map((e) => e.code.toUpperCase());

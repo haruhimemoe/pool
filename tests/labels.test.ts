@@ -45,7 +45,7 @@ describe("labels", () => {
 
 describe("slot labels read back", () => {
   // Codes from a few letters and digits, so prefixes like NM/NM1 and C/C1/C12 come up often.
-  const codes = fc.array(fc.stringMatching(/^[NC][M12]{0,2}$/), { maxLength: 8 });
+  const codes = fc.array(fc.stringMatching(/^[NC1][M12]{0,2}$/), { maxLength: 8 });
   const pools = codes.chain((list) => {
     const pool = list.reduce<Pool>((next, code) => addBucket(next, code, 0), {
       name: "p",
