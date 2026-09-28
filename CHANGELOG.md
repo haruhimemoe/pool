@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- `@haruhimemoe/pool/service`, the contract between pools.haruhime.moe and packs.haruhime.moe: `packInputSchema`, `poolsPackBodySchema` (the `PUT /api/service/pools/{ref}` body), `poolsRefSchema`, `poolsSyncAnswerSchema`, `poolsStatsAnswerSchema`, `MAX_DESCRIPTION_LENGTH` and the visibilities. Each app had its own copy, and pools couldn't check the description limit.
 - `@haruhimemoe/pool/content-filter`, a second entry point with `hasBlockedLanguage(text)`: the slur and hate slogan blocklist packs.haruhime.moe and pools.haruhime.moe each had a copy of, unchanged. The main entry point never loads its word list.
 - `changesStarRating(mods)`, `ratingMods(mods)` and `speedRate(mods)`: which mods change a star rating, and how fast DT (1.5) and HT (0.75) play, with NC read as DT and DC as HT. packs.haruhime.moe and pools.haruhime.moe had their own copies.
 - `displayPoolName(name)`: a pool name safe to show and store, with control characters and line breaks turned into spaces and bidi controls removed. Keys carry names as typed, so the README now says to treat them as untrusted.

@@ -73,7 +73,7 @@ Why "pack key" and not "pool key"? That's the format's name: packs.haruhime.moe 
 
 ## API
 
-Every runtime export is below, grouped by area. The package exports nothing else (a test pins the list). Everything comes from the package root, `@haruhimemoe/pool`, except the [content filter](#content-filter), which has its own entry point.
+Every runtime export is below, grouped by area. The package exports nothing else (a test pins the list). Everything comes from the package root, `@haruhimemoe/pool`, except the [content filter](#content-filter) and the [service contract](#service-contract), which have their own entry points.
 
 ### Shape and validation
 
@@ -270,6 +270,30 @@ A basic blocklist for text people publish, such as pool names, descriptions and 
 | `hasBlockedLanguage(text)` | `true` when `text` holds a slur or a hate slogan. Ordinary swearing passes. It sees through case, accents, common leetspeak, Cyrillic lookalikes, stretched letters, single separators (`r.e.t.a.r.d`) and invisible characters, and matches whole words, so words that contain a term (Niger, spice, Pakistan) pass. |
 
 It's a first line, not moderation: keep a way for people to hide what gets through. packs.haruhime.moe and pools.haruhime.moe use the same list, so a name one site accepts, the other accepts too.
+
+### Service contract
+
+```ts
+import { poolsPackBodySchema, type PoolsPackBody } from "@haruhimemoe/pool/service";
+```
+
+What pools.haruhime.moe and packs.haruhime.moe send each other, at its own entry point, `@haruhimemoe/pool/service`. Both sides import the same schemas, so pools can check a body before it sends it. It loads the content filter.
+
+| Export | What it is |
+| --- | --- |
+| `packInputSchema` | What packs saves: `poolFields` plus `visibility` (`"unlisted"` when left out) and an optional `description`. The name, the description and every custom slot code must pass `hasBlockedLanguage`, and a pack needs at least one map. Unknown keys are dropped. |
+| `poolsPackBodySchema` | The body of `PUT /api/service/pools/{ref}`: exactly a pack input. An unknown key is an error, and `visibility` is required. |
+| `poolsRefSchema`, `POOLS_REF_PATTERN` | A pools pool id, the route's `ref`: 1 to 64 of `a-z`, `0-9` and `-` (`otdb-58`, `host-k3j9x0ab`). |
+| `poolsSyncAnswerSchema` | packs' answer to the PUT: `{ slug, state, listed }`. |
+| `POOLS_SYNC_STATES` | `["created", "updated", "unchanged"]`, the answer's `state`. |
+| `poolsStatsAnswerSchema` | packs' answer to `POST /api/service/pools/stats`: `{ updated, remaining }`, both whole numbers from 0. |
+| `packVisibilitySchema`, `PACK_VISIBILITIES` | `"private"`, `"unlisted"` or `"public"`. |
+| `DEFAULT_PACK_VISIBILITY` | `"unlisted"`. |
+| `packDescriptionSchema` | A description: line endings turned into LF, trimmed, then at most `MAX_DESCRIPTION_LENGTH`. |
+| `MAX_DESCRIPTION_LENGTH` | `500` UTF-16 code units, after trimming. |
+| `normalizeDescription(text)` | CRLF and CR turned into LF, then trimmed. |
+
+Its types: `PackInput` (what `packInputSchema` returns), `PackInputBody` (what a client sends), `PoolsPackBody` (a pack input with `visibility` set), `PackVisibility`, `PoolsSyncAnswer`, `PoolsSyncState` and `PoolsStatsAnswer`.
 
 ### Types
 

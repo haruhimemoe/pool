@@ -1,6 +1,6 @@
 # AGENTS.md
 
-`@haruhimemoe/pool`: an osu! tournament mappool as data. Shape, validation, mod rules, pure edits, pasted-text parsing, and the pack key codec (`pk1.`, `pk2.`, `pk3.`). No network, storage or UI. packs.haruhime.moe and pools.haruhime.moe depend on it.
+`@haruhimemoe/pool`: an osu! tournament mappool as data. Shape, validation, mod rules, pure edits, pasted-text parsing, and the pack key codec (`pk1.`, `pk2.`, `pk3.`), plus two subpath entry points: the content filter and the packs and pools service contract. No network, storage or UI. packs.haruhime.moe and pools.haruhime.moe depend on it.
 
 ## Rules
 
@@ -17,7 +17,8 @@
 
 ## Layout
 
-- `src/index.ts`: the main entry point (`@haruhimemoe/pool`). Re-exports every module below except `content-filter` and the internals.
+- `src/index.ts`: the main entry point (`@haruhimemoe/pool`). Re-exports every module below except `service`, `content-filter` and the internals.
+- `src/service.ts`: the packs and pools service contract (pack input, the pools PUT body, packs' answers), its own entry point (`@haruhimemoe/pool/service`). Loads `content-filter`; the main entry point never imports it.
 - `src/content-filter.ts`: `hasBlockedLanguage`, its own entry point (`@haruhimemoe/pool/content-filter`) so the word list loads only where it's imported. Nothing in the main entry point may import it (`tests/exports.test.ts` checks). Keep the word list's format (`SLURS`, `PHRASES`, `NUMBER_CODES`, `LOOKALIKES`).
 - `src/schema.ts`: zod schemas and the `Pool`, `PoolSlot` and bucket types; `checkPoolBuckets`.
 - `src/constants.ts`: limits, built-in buckets, the custom slot code pattern, `PALETTE`.
@@ -31,7 +32,7 @@
 - `src/codes.ts`: how a bucket code reads in text (its characters, and the digit rule `slotLabel` and the parser share). Internal, not exported.
 - `src/base64url.ts`, `src/crc16.ts`, `src/varint.ts`: codec internals, not exported from the package.
 - `docs/pack-key.md`: the key format spec, including the decoder rules. Ships in the npm package.
-- `tests/`: `schema`, `mods`, `buckets`, `bucket-edits`, `labels`, `pool`, `input`, `key`, `base64url`, `crc16` and `varint` test their modules; `key-decoder` has hand-built keys per decoder rule; `key-legacy` and `packs-equivalence` run the frozen fixtures in `tests/fixtures/`; `content-filter` is ported from the apps unchanged; `exports` pins every entry point's API and the `exports` map; `extras` pins edge cases.
+- `tests/`: `schema`, `mods`, `buckets`, `bucket-edits`, `labels`, `pool`, `input`, `key`, `base64url`, `crc16` and `varint` test their modules; `key-decoder` has hand-built keys per decoder rule; `key-legacy` and `packs-equivalence` run the frozen fixtures in `tests/fixtures/`; `content-filter` and `service` carry the apps' own test cases; `exports` pins every entry point's API and the `exports` map; `extras` pins edge cases.
 - `scripts/smoke.mjs`: imports the built `dist/`, round-trips a key per version, and loads each subpath entry point (`bun run test:dist`).
 - `scripts/check-consumer.mjs`: packs the package, installs it with a given zod, typechecks and runs a strict consumer that imports every entry point.
 - `scripts/gen-packs-keys.ts`: how `packs-keys.json` was made. Never rerun it.

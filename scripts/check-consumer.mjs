@@ -55,6 +55,7 @@ try {
     `import { z } from "zod";
 import { decodePackKey, encodePackKey, type Pool, poolFields, checkPoolBuckets, storedSlotModsSchema, type StoredSlotMods } from "@haruhimemoe/pool";
 import { hasBlockedLanguage } from "@haruhimemoe/pool/content-filter";
+import { type PoolsPackBody, type PoolsSyncAnswer, poolsPackBodySchema } from "@haruhimemoe/pool/service";
 
 const pool: Pool = { name: "Quals", slots: [{ mod: "NM", index: 1, beatmapId: 129891 }] };
 const stored = poolFields.extend({ description: z.string() }).superRefine(checkPoolBuckets);
@@ -67,6 +68,10 @@ if (stored.safeParse({ ...value, slots: [{ mod: "XX", index: 1, beatmapId: 1 }] 
 if (JSON.stringify(decodePackKey(encodePackKey(pool))) !== JSON.stringify(pool)) throw new Error("round trip");
 const blocked: boolean = hasBlockedLanguage(pool.name);
 if (blocked) throw new Error("content filter");
+const body: PoolsPackBody = { ...pool, description: "", visibility: "public" };
+if (!poolsPackBodySchema.safeParse(body).success) throw new Error("service body");
+const answer: PoolsSyncAnswer = { slug: "abcdefghij", state: "created", listed: true };
+void answer;
 void bad;
 console.log("consumer: ok");
 `,

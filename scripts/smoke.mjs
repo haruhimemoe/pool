@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { hasBlockedLanguage } from "../dist/content-filter.js";
 import * as main from "../dist/index.js";
+import { poolsPackBodySchema } from "../dist/service.js";
 
 const { decodePackKey, encodePackKey, PackKeyError, parsePoolText } = main;
 
@@ -56,7 +57,10 @@ assert.deepEqual(parsePoolText("NM1 129891", { slots: [] }).slots, [
 assert.equal(hasBlockedLanguage("heil hitler"), true);
 assert.equal(hasBlockedLanguage("Scunthorpe Cup"), false);
 assert.equal("hasBlockedLanguage" in main, false, "the main entry has no word list");
-for (const entry of ["index", "content-filter"]) {
+const body = { name: "Quals", visibility: "public", slots: pools[0].slots };
+assert.equal(poolsPackBodySchema.parse(body).name, "Quals");
+assert.equal(poolsPackBodySchema.safeParse({ ...body, year: 2023 }).success, false);
+for (const entry of ["index", "content-filter", "service"]) {
   assert.ok(existsSync(new URL(`../dist/${entry}.d.ts`, import.meta.url)), `${entry} types built`);
 }
 assert.ok(existsSync(new URL("../docs/pack-key.md", import.meta.url)), "key format doc ships");

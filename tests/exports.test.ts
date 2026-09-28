@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 import * as contentFilter from "../src/content-filter.js";
 import * as api from "../src/index.js";
+import * as service from "../src/service.js";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
@@ -124,15 +125,44 @@ it("exports the content filter from its own entry point", () => {
   expect(Object.keys(contentFilter).sort()).toEqual(["hasBlockedLanguage"]);
 });
 
-it("never loads the content filter's word list from the main entry point", () => {
+it("exports the packs and pools service contract from its own entry point", () => {
+  expect(Object.keys(service).sort()).toMatchInlineSnapshot(`
+    [
+      "DEFAULT_PACK_VISIBILITY",
+      "MAX_DESCRIPTION_LENGTH",
+      "PACK_VISIBILITIES",
+      "POOLS_REF_PATTERN",
+      "POOLS_SYNC_STATES",
+      "normalizeDescription",
+      "packDescriptionSchema",
+      "packInputSchema",
+      "packVisibilitySchema",
+      "poolsPackBodySchema",
+      "poolsRefSchema",
+      "poolsStatsAnswerSchema",
+      "poolsSyncAnswerSchema",
+    ]
+  `);
+});
+
+it("never loads the content filter's word list or the service from the main entry point", () => {
   expect(loads("index").has("bucket-edits")).toBe(true);
   expect(loads("index").has("content-filter")).toBe(false);
+  expect(loads("index").has("service")).toBe(false);
+  expect(loads("content-filter")).toEqual(new Set(["content-filter"]));
 });
 
 it("maps every entry point in package.json", () => {
-  expect(Object.keys(pkg.exports)).toEqual([".", "./content-filter", "./package.json"]);
-  expect(pkg.exports["./content-filter"]).toEqual({
-    types: "./dist/content-filter.d.ts",
-    default: "./dist/content-filter.js",
-  });
+  expect(Object.keys(pkg.exports)).toEqual([
+    ".",
+    "./content-filter",
+    "./service",
+    "./package.json",
+  ]);
+  for (const entry of ["content-filter", "service"]) {
+    expect(pkg.exports[`./${entry}`]).toEqual({
+      types: `./dist/${entry}.d.ts`,
+      default: `./dist/${entry}.js`,
+    });
+  }
 });

@@ -30,6 +30,10 @@
       "types": "./dist/content-filter.d.ts",
       "default": "./dist/content-filter.js"
     },
+    "./service": {
+      "types": "./dist/service.d.ts",
+      "default": "./dist/service.js"
+    },
     "./package.json": "./package.json"
   },
   "types": "./dist/index.d.ts",
