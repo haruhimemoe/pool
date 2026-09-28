@@ -21,13 +21,16 @@
 - `src/schema.ts`: zod schemas and the `Pool`, `PoolSlot` and bucket types; `checkPoolBuckets`.
 - `src/constants.ts`: limits, built-in buckets, the custom slot code pattern, `PALETTE`.
 - `src/mods.ts`: mod acronyms, forced set rules, the pk3 bitmask, `slotModsFor`, star rating mod sets. Imports only types from `schema.ts` (which imports it).
-- `src/buckets.ts`: bucket list helpers, labels, code checks, and the bucket edits.
+- `src/buckets.ts`: bucket list helpers, the canonical list, and custom code checks.
+- `src/bucket-edits.ts`: the bucket edits (`addBucket`, `renameBucket`, `moveBucket`, `setBucketMods`, …).
+- `src/labels.ts`: bucket names and slot labels.
 - `src/pool.ts`: slot order and the slot edits (`addSlot`, `removeSlot`, `moveSlot`, `mergeSlots`, `planMerge`).
 - `src/input.ts`: `parseBeatmapRef` and `parsePoolText`.
 - `src/key.ts`: the pack key codec, `PackKeyError`, `extractPackKey`.
+- `src/codes.ts`: how a bucket code reads in text (its characters, and the digit rule `slotLabel` and the parser share). Internal, not exported.
 - `src/base64url.ts`, `src/crc16.ts`, `src/varint.ts`: codec internals, not exported from the package.
 - `docs/pack-key.md`: the key format spec, including the decoder rules. Ships in the npm package.
-- `tests/`: `schema`, `mods`, `buckets`, `pool`, `input`, `key`, `base64url`, `crc16` and `varint` test their modules; `key-decoder` has hand-built keys per decoder rule; `key-legacy` and `packs-equivalence` run the frozen fixtures in `tests/fixtures/`; `exports` pins the public API; `extras` pins edge cases.
+- `tests/`: `schema`, `mods`, `buckets`, `bucket-edits`, `labels`, `pool`, `input`, `key`, `base64url`, `crc16` and `varint` test their modules; `key-decoder` has hand-built keys per decoder rule; `key-legacy` and `packs-equivalence` run the frozen fixtures in `tests/fixtures/`; `exports` pins the public API; `extras` pins edge cases.
 - `scripts/smoke.mjs`: imports the built `dist/` and round-trips a key per version (`bun run test:dist`).
 - `scripts/check-consumer.mjs`: packs the package, installs it with a given zod, typechecks and runs a strict consumer.
 - `scripts/gen-packs-keys.ts`: how `packs-keys.json` was made. Never rerun it.

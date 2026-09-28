@@ -6,10 +6,11 @@
  *       Custom buckets may carry mods (forced or freemod).
  * @author David @dvhsh (https://dvh.sh)
  * @created Tue Sep 22, 2026
- * @modified Wed Sep 23, 2026
+ * @modified Mon Sep 28, 2026
  */
 
 import { z } from "zod";
+import { bucketsOf, isCustomBucket } from "./buckets.js";
 import {
   BUCKET_CODE_PATTERN,
   isModBucket,
@@ -94,9 +95,6 @@ const slotsSchema = z
 
 const bucketsSchema = z.array(bucketEntrySchema).max(MOD_BUCKETS.length + MAX_CUSTOM_BUCKETS);
 
-const DEFAULT_LIST: BucketEntry[] = MOD_BUCKETS.map((code) => ({ code }));
-const isCustom = (entry: BucketEntry): entry is CustomBucket => "color" in entry;
-
 /**
  * @function checkPoolBuckets
  * @param pool {{ slots; buckets? }} a parsed pool
@@ -111,23 +109,23 @@ export const checkPoolBuckets = (
 ): void => {
   const issue = (message: string, path: (string | number)[]) =>
     ctx.addIssue({ code: "custom", message, path });
-  const list = pool.buckets ?? DEFAULT_LIST;
+  const list = bucketsOf(pool);
   const seen = new Set<string>();
   list.forEach((entry, i) => {
     // Codes compare case-insensitively everywhere (upper-cased), but are stored as typed.
     const folded = entry.code.toUpperCase();
     if (seen.has(folded)) issue(`slot ${entry.code} is listed more than once`, ["buckets", i]);
     seen.add(folded);
-    if (isCustom(entry) && isModBucket(folded)) {
+    if (isCustomBucket(entry) && isModBucket(folded)) {
       issue(`${entry.code} is a built-in slot`, ["buckets", i]);
     }
   });
   for (const code of MOD_BUCKETS) {
-    if (!list.some((entry) => !isCustom(entry) && entry.code === code)) {
+    if (!list.some((entry) => !isCustomBucket(entry) && entry.code === code)) {
       issue(`the slot list is missing ${code}`, ["buckets"]);
     }
   }
-  if (list.filter(isCustom).length > MAX_CUSTOM_BUCKETS) {
+  if (list.filter(isCustomBucket).length > MAX_CUSTOM_BUCKETS) {
     issue(`a pool can have at most ${MAX_CUSTOM_BUCKETS} custom slots`, ["buckets"]);
   }
   const codes = new Set(list.map((entry) => entry.code));

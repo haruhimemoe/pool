@@ -3,11 +3,11 @@
  * @desc Pool editing: ordering, next index, add at cap, remove with renumbering, merge/upsert.
  * @author David @dvhsh (https://dvh.sh)
  * @created Tue Sep 22, 2026
- * @modified Tue Sep 22, 2026
+ * @modified Mon Sep 28, 2026
  */
 
 import { describe, expect, it } from "vitest";
-import { addBucket, moveBucket } from "../src/buckets.js";
+import { addBucket, moveBucket } from "../src/bucket-edits.js";
 import { MAX_SLOTS } from "../src/constants.js";
 import {
   addSlot,

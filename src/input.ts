@@ -4,7 +4,7 @@
  *       into slots, creating custom buckets for unknown codes.
  * @author David @dvhsh (https://dvh.sh)
  * @created Tue Sep 22, 2026
- * @modified Wed Sep 23, 2026
+ * @modified Mon Sep 28, 2026
  */
 
 import {
@@ -13,9 +13,16 @@ import {
   insertBeforeTb,
   matchBucketCode,
   nextFreeColor,
-  slotLabel,
 } from "./buckets.js";
-import { MAX_CUSTOM_BUCKETS, MAX_SLOT_INDEX, NO_SLOT_NAME } from "./constants.js";
+import { CODE_CHAR, codeEndsInDigit } from "./codes.js";
+import {
+  MAX_BUCKET_CODE_LENGTH,
+  MAX_CUSTOM_BUCKETS,
+  MAX_SLOT_INDEX,
+  NO_SLOT_NAME,
+} from "./constants.js";
+import { slotLabel } from "./labels.js";
+import { RULESETS } from "./mods.js";
 import { nextSlotIndex } from "./pool.js";
 import {
   type BucketEntry,
@@ -37,7 +44,7 @@ export const BEATMAP_REF_MESSAGES: Readonly<Record<"set-only" | "unrecognized", 
   });
 
 const DIFFICULTY_LINKS = [
-  /osu\.ppy\.sh\/beatmapsets\/\d+\/?#(?:osu|taiko|fruits|mania)\/(\d+)/i,
+  new RegExp(`osu\\.ppy\\.sh/beatmapsets/\\d+/?#(?:${RULESETS.join("|")})/(\\d+)`, "i"),
   /osu\.ppy\.sh\/beatmaps\/(\d+)/i,
   /osu\.ppy\.sh\/b\/(\d+)/i,
 ];
@@ -66,10 +73,14 @@ export const parseBeatmapRef = (token: string): BeatmapRefResult => {
   return { ok: false, reason: "unrecognized" };
 };
 
+/** A whole bucket code, as regex source. */
+const CODE = `${CODE_CHAR}{1,${MAX_BUCKET_CODE_LENGTH}}`;
+/** "[<n>][:.-] <id or link>": what follows a slot's code. */
+const SLOT_REST = "\\s?(\\d{1,2})?\\s*[:.-]?\\s+(\\S+)";
 /** "<code>[<n>][:.-] <id or link>" after a code that is already known. */
-const AFTER_CODE = /^\s?(\d{1,2})?\s*[:.-]?\s+(\S+)/u;
+const AFTER_CODE = new RegExp(`^${SLOT_REST}`, "u");
 /** Same, for a code we haven't seen: 1-12 letters/digits, shortest first so "EZ1" is EZ + 1. */
-const SLOT_LINE = /^([\p{L}\p{N}]{1,12}?)\s?(\d{1,2})?\s*[:.-]?\s+(\S+)/u;
+const SLOT_LINE = new RegExp(`^(${CODE}?)${SLOT_REST}`, "u");
 
 export const POOL_LINE_HELP =
   "Start the line with a slot like NM1 or EZ2, or paste only beatmap IDs or links.";
@@ -95,7 +106,7 @@ export type SlotLineError = { line: number; text: string; code: SlotLineErrorCod
 type LineParts = { code: string; index: string | undefined; ref: string };
 
 /** "<code> <n> <id or link>" with a space before the slot number: the whole first token is the code. */
-const SPACED_LINE = /^([\p{L}\p{N}]{1,12})\s+(\d{1,2})\s*[:.-]?\s+(\S+)/u;
+const SPACED_LINE = new RegExp(`^(${CODE})\\s+(\\d{1,2})\\s*[:.-]?\\s+(\\S+)`, "u");
 
 /**
  * Longest known code first, so an "RC1" bucket wins over reading "RC" + index 1. A code ending
@@ -111,7 +122,7 @@ const splitKnownCode = (line: string, list: readonly BucketEntry[]): LineParts |
     const rest = AFTER_CODE.exec(after);
     if (!rest) continue;
     const parts = { code, index: rest[1], ref: rest[2] ?? "" };
-    if (/\p{N}$/u.test(code) && /^\d/.test(after)) glued ??= parts;
+    if (codeEndsInDigit(code) && /^\d/.test(after)) glued ??= parts;
     else return parts;
   }
   return glued;
@@ -120,7 +131,7 @@ const splitKnownCode = (line: string, list: readonly BucketEntry[]): LineParts |
 /** "RC1 2 555": a first token ending in a digit, then a slot number, then a beatmap. */
 const splitSpacedCode = (line: string): LineParts | null => {
   const match = SPACED_LINE.exec(line);
-  if (!match?.[1] || !/\p{N}$/u.test(match[1]) || !parseBeatmapRef(match[3] ?? "").ok) return null;
+  if (!match?.[1] || !codeEndsInDigit(match[1]) || !parseBeatmapRef(match[3] ?? "").ok) return null;
   return { code: match[1], index: match[2], ref: match[3] ?? "" };
 };
 
