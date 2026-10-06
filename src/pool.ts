@@ -4,7 +4,7 @@
  *       pool when an edit is refused). Pool order: no-slot maps, then the pool's buckets in order.
  * @author David @dvhsh (https://dvh.sh)
  * @created Tue Sep 22, 2026
- * @modified Mon Sep 28, 2026
+ * @modified Mon Oct 5, 2026
  */
 
 import { bucketsOf, DEFAULT_BUCKETS, findBucket } from "./buckets.js";
@@ -106,6 +106,30 @@ export const moveSlot = (
 
   const rest = removeSlot(pool, from.mod, from.index);
   return withSlots(rest, [...rest.slots, { ...slot, mod: to, index }]);
+};
+
+/**
+ * @function reorderSlot
+ * @param pool {Pool} current pool
+ * @param mod {SlotBucket} the group to reorder within (null for no slot)
+ * @param beatmapId {number} the map to move
+ * @param to {number} 0-based position in the group after the move
+ * @returns {Pool} pool with that one group renumbered 1..N in the new order, or the same pool
+ *          when the map isn't in that group, `to` is out of range, or it's already there
+ */
+export const reorderSlot = (pool: Pool, mod: SlotBucket, beatmapId: number, to: number): Pool => {
+  const group = pool.slots.filter((s) => s.mod === mod).sort((a, b) => a.index - b.index);
+  const from = group.findIndex((s) => s.beatmapId === beatmapId);
+  if (from === -1 || !Number.isInteger(to) || to < 0 || to >= group.length || to === from) {
+    return pool;
+  }
+  const moved = group[from] as PoolSlot;
+  const rest = group.filter((_, i) => i !== from);
+  const reordered = [...rest.slice(0, to), moved, ...rest.slice(to)].map((slot, i) => ({
+    ...slot,
+    index: i + 1,
+  }));
+  return withSlots(pool, [...pool.slots.filter((s) => s.mod !== mod), ...reordered]);
 };
 
 /** What planMerge expects mergeSlots to add, replace and drop. */

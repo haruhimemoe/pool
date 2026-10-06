@@ -106,6 +106,7 @@ it("exports the documented runtime API", () => {
       "removeBucket",
       "removeSlot",
       "renameBucket",
+      "reorderSlot",
       "setBucketMods",
       "slotKey",
       "slotLabel",

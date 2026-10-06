@@ -1,6 +1,6 @@
 {
   "name": "@haruhimemoe/pool",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "osu! tournament mappools as data: slots, mod buckets, custom slots with forced or free mods, zod validation, pure editing helpers, pasted-pool parsing, the pk1/pk2/pk3 pack key codec, a content filter, and the packs.haruhime.moe service contract.",
   "keywords": [
     "osu",

@@ -3,7 +3,7 @@
  * @desc Pool editing: ordering, next index, add at cap, remove with renumbering, merge/upsert.
  * @author David @dvhsh (https://dvh.sh)
  * @created Tue Sep 22, 2026
- * @modified Mon Sep 28, 2026
+ * @modified Mon Oct 5, 2026
  */
 
 import fc from "fast-check";
@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import { addBucket, moveBucket } from "../src/bucket-edits.js";
 import { bucketsOf } from "../src/buckets.js";
 import { MAX_SLOTS } from "../src/constants.js";
+import { decodePackKey, encodePackKey } from "../src/key.js";
 import {
   addSlot,
   mergeSlots,
@@ -18,6 +19,7 @@ import {
   nextSlotIndex,
   planMerge,
   removeSlot,
+  reorderSlot,
   sortSlots,
 } from "../src/pool.js";
 import { type Pool, type PoolSlot, slotKey } from "../src/schema.js";
@@ -263,6 +265,63 @@ describe("moveSlot", () => {
       })),
     );
     expect(moveSlot(full, { mod: "NM", index: 1 }, "TB").slots).toHaveLength(MAX_SLOTS);
+  });
+});
+
+describe("reorderSlot", () => {
+  const base: Pool = {
+    name: "p",
+    slots: [
+      { mod: "NM", index: 1, beatmapId: 1 },
+      { mod: "NM", index: 2, beatmapId: 2 },
+      { mod: "NM", index: 3, beatmapId: 3 },
+      { mod: "HD", index: 1, beatmapId: 4 },
+    ],
+  };
+
+  it("moves a slot within its bucket and renumbers the group", () => {
+    const moved = reorderSlot(base, "NM", 3, 0);
+    expect(moved.slots.filter((s) => s.mod === "NM")).toEqual([
+      { mod: "NM", index: 1, beatmapId: 3 },
+      { mod: "NM", index: 2, beatmapId: 1 },
+      { mod: "NM", index: 3, beatmapId: 2 },
+    ]);
+    // Other groups untouched.
+    expect(moved.slots.find((s) => s.beatmapId === 4)).toEqual({
+      mod: "HD",
+      index: 1,
+      beatmapId: 4,
+    });
+  });
+
+  it("reorders the no-slot group the same way", () => {
+    const withNoSlot: Pool = {
+      name: "p",
+      slots: [
+        { mod: null, index: 1, beatmapId: 10 },
+        { mod: null, index: 2, beatmapId: 11 },
+      ],
+    };
+    expect(reorderSlot(withNoSlot, null, 11, 0).slots).toEqual([
+      { mod: null, index: 1, beatmapId: 11 },
+      { mod: null, index: 2, beatmapId: 10 },
+    ]);
+  });
+
+  it("refuses a missing beatmap, an out-of-range position, or no-op moves", () => {
+    expect(reorderSlot(base, "NM", 999, 0)).toBe(base);
+    expect(reorderSlot(base, "NM", 1, 3)).toBe(base);
+    expect(reorderSlot(base, "NM", 1, -1)).toBe(base);
+    expect(reorderSlot(base, "NM", 1, 0)).toBe(base);
+    expect(reorderSlot(base, "NM", 1, 1.5)).toBe(base);
+  });
+
+  it("round-trips through the pack key", () => {
+    const moved = reorderSlot(base, "NM", 3, 0);
+    const decoded = decodePackKey(encodePackKey(moved));
+    expect(new Set(decoded.slots.map((s) => JSON.stringify(s)))).toEqual(
+      new Set(moved.slots.map((s) => JSON.stringify(s))),
+    );
   });
 });
 

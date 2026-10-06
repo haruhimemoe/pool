@@ -201,6 +201,7 @@ Keys carry a pool's name as typed, so treat it as untrusted text. `poolSchema` r
 | `addSlot(pool, mod, beatmapId)` | Adds a map at the end of a group (`mod` is `null` for no slot). Refuses when the pool has 64 maps, the group already reaches 99, or the pool doesn't have the bucket. |
 | `removeSlot(pool, mod, index)` | Removes a map. Later maps in the same group move down one. Refuses when no map matches. |
 | `moveSlot(pool, from, to)` | Moves the map at `from` (`{ mod, index }`) to the end of group `to` and closes the gap. Refuses a missing map, the same group, a target group that already reaches 99, or a bucket the pool doesn't have. |
+| `reorderSlot(pool, mod, beatmapId, to)` | Moves the map with `beatmapId` to 0-based position `to` within its own group (`mod`, or `null` for no slot), renumbering the group 1..N. Refuses a missing map, an out-of-range `to`, or a no-op. |
 | `mergeSlots(pool, incoming)` | Upserts maps by (bucket, number). Replacements always apply, new maps stop at 64, and anything `planMerge` drops is left out, so a valid pool stays valid. |
 | `planMerge(slots, incoming, buckets?)` | `{ added, replaced, dropped }`. Dropped: new maps past 64, maps that fail `poolSlotSchema`, and, when `buckets` is given, maps in a bucket not in it. Pass `bucketsOf(pool)` to preview `mergeSlots` exactly; leave it out to preview a paste before its new custom slots exist. The same slot twice in `incoming` counts once, with the last good copy's map. A map identical to one already there is in no list. |
 

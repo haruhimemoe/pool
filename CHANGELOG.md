@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-05
+
+### Added
+
+- `reorderSlot(pool, mod, beatmapId, to)`: move a map within its own bucket (or the no-slot group) without changing its mod, renumbering the group 1..N. packs.haruhime.moe's map drag and drop uses this.
+
 ## [0.2.0] - 2026-09-28
 
 ### Added
@@ -40,6 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The pack key codec: `encodePackKey`, `decodePackKey` and `extractPackKey` for `pk1.`, `pk2.` and `pk3.` keys, byte for byte compatible with packs.haruhime.moe.
 - `docs/pack-key.md`, the key format's specification, including the exact decoder rules.
 
-[unreleased]: https://github.com/haruhimemoe/pool/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/haruhimemoe/pool/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/haruhimemoe/pool/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/haruhimemoe/pool/compare/45a21de34de0bcc1795914bf258768fe8a0e84fe...v0.2.0
 [0.1.0]: https://github.com/haruhimemoe/pool/tree/45a21de34de0bcc1795914bf258768fe8a0e84fe
