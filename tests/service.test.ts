@@ -12,6 +12,7 @@
 import { describe, expect, it } from "vitest";
 import { MOD_BUCKETS } from "../src/constants.js";
 import {
+  createPackInputSchema,
   DEFAULT_PACK_VISIBILITY,
   MAX_DESCRIPTION_LENGTH,
   normalizeDescription,
@@ -214,5 +215,26 @@ describe("packs' answers", () => {
     });
     expect(poolsStatsAnswerSchema.safeParse({ updated: -1, remaining: 0 }).success).toBe(false);
     expect(poolsStatsAnswerSchema.safeParse({ updated: 1.5, remaining: 0 }).success).toBe(false);
+  });
+});
+
+describe("createPackInputSchema", () => {
+  it("matches packInputSchema with no options", () => {
+    const made = createPackInputSchema().parse({ name: "Pool", slots: SLOTS });
+    expect(made).toEqual(packInputSchema.parse({ name: "Pool", slots: SLOTS }));
+  });
+
+  it("takes its own description limit, default visibility and content filter", () => {
+    const schema = createPackInputSchema({
+      maxDescriptionLength: 10,
+      defaultVisibility: "private",
+      contentFilter: false,
+    });
+    expect(schema.parse({ name: "Pool", slots: SLOTS }).visibility).toBe("private");
+    expect(
+      schema.safeParse({ name: "Pool", slots: SLOTS, description: "x".repeat(11) }).success,
+    ).toBe(false);
+    expect(schema.safeParse({ name: "faggot", slots: SLOTS }).success).toBe(true);
+    expect(packInputSchema.safeParse({ name: "faggot", slots: SLOTS }).success).toBe(false);
   });
 });

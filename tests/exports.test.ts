@@ -134,6 +134,7 @@ it("exports the packs and pools service contract from its own entry point", () =
       "PACK_VISIBILITIES",
       "POOLS_REF_PATTERN",
       "POOLS_SYNC_STATES",
+      "createPackInputSchema",
       "normalizeDescription",
       "packDescriptionSchema",
       "packInputSchema",

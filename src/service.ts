@@ -1,7 +1,8 @@
 /**
  * @file src/service.ts
- * @desc @haruhimemoe/pool/service: the contract between pools.haruhime.moe and packs.haruhime.moe.
- *       A pack input (what packs saves: name, description, visibility, slots, buckets, with the
+ * @desc @haruhimemoe/pool/service: a saved pack's input schema and a pool-to-pack sync contract,
+ *       as pools.haruhime.moe and packs.haruhime.moe use them (createPackInputSchema for other
+ *       rules). A pack input (what packs saves: name, description, visibility, slots, buckets, with the
  *       content filter on every published text), the PUT /api/service/pools/{ref} body pools
  *       sends (exactly a pack input, unknown keys refused, visibility required), the ref, and
  *       packs' answers. Its own entry point, since it loads the content filter's word list.
@@ -9,7 +10,7 @@
  *       (src/lib/packs-client.ts, src/utils/pack-input.ts), which each had their own copy.
  * @author David @dvhsh (https://dvh.sh)
  * @created Mon Sep 28, 2026
- * @modified Mon Sep 28, 2026
+ * @modified Sat Oct 10, 2026
  */
 
 import { z } from "zod";
@@ -36,18 +37,19 @@ export const MAX_DESCRIPTION_LENGTH = 500;
  */
 export const normalizeDescription = (text: string): string => text.replace(/\r\n?/g, "\n").trim();
 
+/**
+ * @function descriptionSchema
+ * @param max {number} the longest description, in UTF-16 code units after trimming
+ * @returns {z.ZodType} a description: line endings normalized, trimmed, at most max; "" means none
+ */
+const descriptionSchema = (max: number) =>
+  z
+    .string()
+    .transform(normalizeDescription)
+    .pipe(z.string().max(max, `Keep the description to ${max} characters or fewer.`));
+
 /** A pack description: line endings normalized, trimmed, at most 500; "" means none. */
-export const packDescriptionSchema = z
-  .string()
-  .transform(normalizeDescription)
-  .pipe(
-    z
-      .string()
-      .max(
-        MAX_DESCRIPTION_LENGTH,
-        `Keep the description to ${MAX_DESCRIPTION_LENGTH} characters or fewer.`,
-      ),
-  );
+export const packDescriptionSchema = descriptionSchema(MAX_DESCRIPTION_LENGTH);
 
 /** Text over its limit already fails; skipping the blocklist keeps huge bodies cheap. */
 const isClean =
@@ -56,36 +58,63 @@ const isClean =
     text.length > max || !hasBlockedLanguage(text);
 const cleanMessage = (field: string) => `Please keep the ${field} free of slurs.`;
 
+/** createPackInputSchema's options. Each default is packs.haruhime.moe's rule. */
+export type PackInputOptions = {
+  /** The longest description (default MAX_DESCRIPTION_LENGTH, 500). */
+  maxDescriptionLength?: number;
+  /** The visibility a pack gets when it doesn't say (default DEFAULT_PACK_VISIBILITY). */
+  defaultVisibility?: PackVisibility;
+  /** Run the content filter on the name, description and slot codes (default true). */
+  contentFilter?: boolean;
+};
+
+/**
+ * @function createPackInputSchema
+ * @param options {PackInputOptions} the description limit, default visibility and content filter
+ * @returns {z.ZodType} a pack input schema: the pool's fields, a visibility and an optional
+ *          description, at least one map, with packInputSchema's checks under these options
+ */
+export const createPackInputSchema = ({
+  maxDescriptionLength = MAX_DESCRIPTION_LENGTH,
+  defaultVisibility = DEFAULT_PACK_VISIBILITY,
+  contentFilter = true,
+}: PackInputOptions = {}) => {
+  const clean = (max: number) => (text: string) => !contentFilter || isClean(max)(text);
+  return poolFields
+    .extend({
+      name: poolFields.shape.name.refine(clean(MAX_NAME_LENGTH), cleanMessage("name")),
+      visibility: packVisibilitySchema.default(defaultVisibility),
+      description: descriptionSchema(maxDescriptionLength)
+        .refine(clean(maxDescriptionLength), cleanMessage("description"))
+        .optional(),
+    })
+    .superRefine(checkPoolBuckets)
+    .superRefine((pack, ctx) => {
+      if (!contentFilter) return;
+      for (const [i, bucket] of (pack.buckets ?? []).entries()) {
+        if (hasBlockedLanguage(bucket.code)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["buckets", i, "code"],
+            message: cleanMessage("slot names"),
+          });
+        }
+      }
+    })
+    .refine((pack) => pack.slots.length > 0, {
+      message: "Add at least one map before saving.",
+      path: ["slots"],
+    });
+};
+
 /**
  * What packs saves (POST /api/packs, PUT /api/packs/{slug}, and the pools service's PUT body):
  * the pool's fields, a visibility (unlisted when left out) and an optional description. The name,
  * the description and every custom slot code go through the content filter, since packs can list
- * them publicly. At least one map. Unknown keys (ownerId, slug) are dropped.
+ * them publicly. At least one map. Unknown keys (ownerId, slug) are dropped. Another app with
+ * other rules builds its own with createPackInputSchema.
  */
-export const packInputSchema = poolFields
-  .extend({
-    name: poolFields.shape.name.refine(isClean(MAX_NAME_LENGTH), cleanMessage("name")),
-    visibility: packVisibilitySchema.default(DEFAULT_PACK_VISIBILITY),
-    description: packDescriptionSchema
-      .refine(isClean(MAX_DESCRIPTION_LENGTH), cleanMessage("description"))
-      .optional(),
-  })
-  .superRefine(checkPoolBuckets)
-  .superRefine((pack, ctx) => {
-    for (const [i, bucket] of (pack.buckets ?? []).entries()) {
-      if (hasBlockedLanguage(bucket.code)) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["buckets", i, "code"],
-          message: cleanMessage("slot names"),
-        });
-      }
-    }
-  })
-  .refine((pack) => pack.slots.length > 0, {
-    message: "Add at least one map before saving.",
-    path: ["slots"],
-  });
+export const packInputSchema = createPackInputSchema();
 
 /** A pack input as packInputSchema returns it. */
 export type PackInput = z.output<typeof packInputSchema>;

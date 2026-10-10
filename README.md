@@ -284,6 +284,7 @@ What pools.haruhime.moe and packs.haruhime.moe send each other, at its own entry
 | Export | What it is |
 | --- | --- |
 | `packInputSchema` | What packs saves: `poolFields` plus `visibility` (`"unlisted"` when left out) and an optional `description`. The name, the description and every custom slot code must pass `hasBlockedLanguage`, and a pack needs at least one map. Unknown keys are dropped. |
+| `createPackInputSchema(options?)` | The same schema under your own rules: `maxDescriptionLength` (default 500), `defaultVisibility` (default `"unlisted"`) and `contentFilter` (default `true`). `packInputSchema` is `createPackInputSchema()`. |
 | `poolsPackBodySchema` | The body of `PUT /api/service/pools/{ref}`: exactly a pack input. An unknown key is an error, and `visibility` is required. |
 | `poolsRefSchema`, `POOLS_REF_PATTERN` | A pools pool id, the route's `ref`: 1 to 64 of `a-z`, `0-9` and `-` (`otdb-58`, `host-k3j9x0ab`). |
 | `poolsSyncAnswerSchema` | packs' answer to the PUT: `{ slug, state, listed }`. |
@@ -295,7 +296,7 @@ What pools.haruhime.moe and packs.haruhime.moe send each other, at its own entry
 | `MAX_DESCRIPTION_LENGTH` | `500` UTF-16 code units, after trimming. |
 | `normalizeDescription(text)` | CRLF and CR turned into LF, then trimmed. |
 
-Its types: `PackInput` (what `packInputSchema` returns), `PackInputBody` (what a client sends), `PoolsPackBody` (a pack input with `visibility` set), `PackVisibility`, `PoolsSyncAnswer`, `PoolsSyncState` and `PoolsStatsAnswer`.
+Its types: `PackInputOptions`, `PackInput` (what `packInputSchema` returns), `PackInputBody` (what a client sends), `PoolsPackBody` (a pack input with `visibility` set), `PackVisibility`, `PoolsSyncAnswer`, `PoolsSyncState` and `PoolsStatsAnswer`.
 
 ### Types
 
